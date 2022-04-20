@@ -3,6 +3,13 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+#custom
+log/
+tensorboard/
+model/
+*.pt
+wandb/
+
 # C extensions
 *.so
 
