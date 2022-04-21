@@ -19,10 +19,10 @@ import gc
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 max_length= 512
-test_step = 1000
-report_step = 100
+test_step = 10000
+report_step = 1000
 seed = 2
-bs =4 
+bs = 64 
 lr = 1e-4
 train_num = 500000
 valid_num = 2000
