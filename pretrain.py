@@ -26,7 +26,6 @@ bs = 64
 lr = 1e-4
 train_num = 500000
 valid_num = 2000
-
 now = time.strftime("%Y-%m-%d-%H_%M_%S",time.localtime(time.time())) 
 log_format = '%(asctime)s |\t  %(message)s'
 logging.basicConfig(stream=sys.stdout, level=logging.INFO,
@@ -196,8 +195,9 @@ for epoch in range(10):
     logging.info(f"\n\n  ----------------epoch:{epoch}----------------")
     my_train(train_dataloader,model,optimizer )
     my_test(valid_dataloader,model,epoch) 
+    torch.save(model,'./model/'+now+'model.pt')
 
-torch.save(model,'./model/'+now+'model.pt')
+
 
 
 # %%
