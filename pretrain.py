@@ -24,8 +24,8 @@ report_step = 100
 seed = 2
 bs =4 
 lr = 1e-4
-train_num = 1000
-valid_num = 200
+train_num = 500000
+valid_num = 2000
 
 now = time.strftime("%Y-%m-%d-%H_%M_%S",time.localtime(time.time())) 
 log_format = '%(asctime)s |\t  %(message)s'
