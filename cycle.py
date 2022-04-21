@@ -3,31 +3,16 @@ import torch
 import torch.nn as nn
 from utils import *
 from transformers.optimization import Adafactor, AdafactorSchedule
-
-class D(nn.Module):
-    def __init__(self,args,name='D') -> None:
-        super(D, self).__init__()
-        self.encoder = torch.load(args.D_model_name.replace('/','')+'.pt').get_encoder()
-        self.classifier = torch.nn.Linear(in_features=512, out_features=2, bias=True)
-    def forward(self,x):
-        return self.classifier(self.encoder(x).last_hidden_state)
-
-
-class G(nn.Module):
-    def __init__(self,args,name='G') -> None:
-        super(G, self).__init__()
-        self.G = torch.load(args.G_model_name.replace('/','')+'.pt')
-    def forward(self,x):
-        return self.G(x)
-
+from basic_model import *
 
 class CycleGAN():
     #G_AB       ->       gumbel softmax       ->       D_A      ->       G_BA     ->      gumbel softmax      ->      D_B
-    def __init__(self,args) -> None:
-        self.G_AB = G(args=args,name="G_AB")
-        self.G_BA = G(args=args,name="G_BA")
-        self.D_A = D(args=args,name="D_A")
-        self.D_B = D(args=args,name="D_B")
+    def __init__(self,args,GAB,GBA,DA,DB,tokenizer) -> None:
+        self.G_AB = G(args=args,pretrained=GAB,name="G_AB",tokenizer=tokenizer,prefix='translate English to Portuguese: ')
+        self.G_BA = G(args=args,pretrained=GBA,name="G_BA",tokenizer=tokenizer,prefix='translate Portuguese to English: ')
+        self.D_A = D(args=args,pretrained=DA,name="D_A")
+        self.D_B = D(args=args,pretrained=DB,name="D_B")
+        self.tokenizer = tokenizer
         self.fake_A_pool = Pool()  
         self.fake_B_pool = Pool()  
         self.criterionGAN = torch.nn.MSELoss()
@@ -37,26 +22,23 @@ class CycleGAN():
         self.optimizer_G_BA = Adafactor(self.G_BA.parameters(), lr = args.G_lr ,scale_parameter=True, relative_step=False , warmup_init=False,clip_threshold=1,beta1=0,eps=( 1e-30,0.001))
         self.optimizer_D_A = Adafactor(self.D_A.parameters(), lr = args.D_lr ,scale_parameter=True, relative_step=False , warmup_init=False,clip_threshold=1,beta1=0,eps=( 1e-30,0.001))
         self.optimizer_D_B = Adafactor(self.D_B.parameters(), lr = args.D_lr ,scale_parameter=True, relative_step=False , warmup_init=False,clip_threshold=1,beta1=0,eps=( 1e-30,0.001))
-        
     def forward(self):#TODO: prefix + gumblesoftmax
-        self.fake_B = self.G_AB(self.real_A)  # G_A(A)
-        self.rec_A = self.G_BA(self.fake_B)   # G_B(G_A(A))
-        self.fake_A = self.G_BA(self.real_B)  # G_B(B)
-        self.rec_B = self.G_AB(self.fake_A)   # G_A(G_B(B))
-
-
-    def set_input(self,A,B):
-        self.real_A = A
-        self.real_B = B
+        self.fake_B,self.fake_B_attn = self.G_AB.gumble_generate(self.real_A,self.real_A_attn)  # G_A(A)
+        self.rec_A,self.rec_A_attn = self.G_BA.gumble_generate(self.fake_B,self.fake_B_attn)   # G_B(G_A(A))
+        self.fake_A,self.fake_A_attn = self.G_BA.gumble_generate(self.real_B,self.real_B_attn)  # G_B(B)
+        self.rec_B,self.rec_B_attn = self.G_AB.gumble_generate(self.fake_A,self.fake_A_attn)   # G_A(G_B(B))
+    def set_input(self,A,A_attn,B,B_attn):
+        self.real_A,self.real_A_attn = A,A_attn
+        self.real_B,self.real_B_attn = B,B_attn
     def optimize_parameters(self):
         self.forward()    
-        self.set_requires_grad([self.netD_A, self.netD_B], False)  # Ds require no gradients when optimizing Gs
+        self.set_requires_grad([self.D_A, self.D_B], False)  # Ds require no gradients when optimizing Gs
         self.optimizer_G_AB.zero_grad()  # set G_A and G_B's gradients to zero
         self.optimizer_G_BA.zero_grad()  # set G_A and G_B's gradients to zero
         self.backward_G()             # calculate gradients for G_A and G_B
         self.optimizer_G.step()       # update G_A and G_B's weights
         # D_A and D_B
-        self.set_requires_grad([self.netD_A, self.netD_B], True)
+        self.set_requires_grad([self.D_A, self.D_B], True)
         self.optimizer_D.zero_grad()   # set D_A and D_B's gradients to zero
         self.backward_D_A()      # calculate gradients for D_A
         self.backward_D_B()      # calculate graidents for D_B

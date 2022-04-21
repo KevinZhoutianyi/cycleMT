@@ -50,4 +50,12 @@ class Pool():
         ret = torch.cat(ret, 0)   # collect all the images and return
         return ret
 
+def tokenize(text_data, tokenizer, max_length, padding = True):
     
+    encoding = tokenizer(text_data, return_tensors='pt', padding=padding, truncation = True, max_length = max_length)
+
+    input_ids = encoding['input_ids']
+    
+    attention_mask = encoding['attention_mask']
+    
+    return input_ids, attention_mask
