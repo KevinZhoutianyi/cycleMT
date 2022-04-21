@@ -59,3 +59,18 @@ def tokenize(text_data, tokenizer, max_length, padding = True):
     attention_mask = encoding['attention_mask']
     
     return input_ids, attention_mask
+def get_train_Dataset(dataset, tokenizer):
+    print('get train data start')
+    train_sentence = [x['en'] for x in dataset]
+    train_target = [x[target_language] for x in dataset]
+
+  
+    model1_input_ids, model1_input_attention_mask = tokenize(train_sentence, tokenizer, max_length = max_length)
+  
+    model1_target_ids, model1_target_attention_mask = tokenize(train_target, tokenizer, max_length = max_length)
+ 
+    train_data = TensorDataset(model1_input_ids, model1_input_attention_mask, model1_target_ids, model1_target_attention_mask)
+    
+    print('get train data end')
+   
+    return train_data
