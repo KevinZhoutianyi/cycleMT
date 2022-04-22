@@ -8,16 +8,19 @@ from basic_model import *
 class CycleGAN():
     #G_AB       ->       gumbel softmax       ->       D_A      ->       G_BA     ->      gumbel softmax      ->      D_B
     def __init__(self,args,GAB,GBA,DA,DB,tokenizer) -> None:
-        self.G_AB = G(args=args,pretrained=GAB,name="G_AB",tokenizer=tokenizer,prefix='translate English to Portuguese: ')
-        self.G_BA = G(args=args,pretrained=GBA,name="G_BA",tokenizer=tokenizer,prefix='translate Portuguese to English: ')
-        self.D_A = D(args=args,pretrained=DA,name="D_A")
-        self.D_B = D(args=args,pretrained=DB,name="D_B")
+        
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.G_AB = G(args=args,pretrained=GAB,name="G_AB",tokenizer=tokenizer,prefix='translate English to Portuguese: ').to(self.device)
+        self.G_BA = G(args=args,pretrained=GBA,name="G_BA",tokenizer=tokenizer,prefix='translate Portuguese to English: ').to(self.device)
+        self.D_A = D(args=args,pretrained=DA,name="D_A").to(self.device)
+        self.D_B = D(args=args,pretrained=DB,name="D_B").to(self.device)
         self.tokenizer = tokenizer
+        self.args = args
         self.fake_A_pool = Pool()  
         self.fake_B_pool = Pool()  
         self.criterionGAN = torch.nn.MSELoss()
-        self.criterionCycle = torch.nn.L1Loss()
-        self.criterionIdt = torch.nn.L1Loss()
+        self.criterionCycle = torch.nn.CrossEntropyLoss( reduction='none')
+        self.criterionIdt = torch.nn.CrossEntropyLoss( reduction='none')
         self.optimizer_G_AB = Adafactor(self.G_AB.parameters(), lr = args.G_lr ,scale_parameter=True, relative_step=False , warmup_init=False,clip_threshold=1,beta1=0,eps=( 1e-30,0.001))
         self.optimizer_G_BA = Adafactor(self.G_BA.parameters(), lr = args.G_lr ,scale_parameter=True, relative_step=False , warmup_init=False,clip_threshold=1,beta1=0,eps=( 1e-30,0.001))
         self.optimizer_D_A = Adafactor(self.D_A.parameters(), lr = args.D_lr ,scale_parameter=True, relative_step=False , warmup_init=False,clip_threshold=1,beta1=0,eps=( 1e-30,0.001))
@@ -36,13 +39,16 @@ class CycleGAN():
         self.optimizer_G_AB.zero_grad()  # set G_A and G_B's gradients to zero
         self.optimizer_G_BA.zero_grad()  # set G_A and G_B's gradients to zero
         self.backward_G()             # calculate gradients for G_A and G_B
-        self.optimizer_G.step()       # update G_A and G_B's weights
+        self.optimizer_G_AB.step()       # update G_A and G_B's weights
+        self.optimizer_G_BA.step()       # update G_A and G_B's weights
         # D_A and D_B
         self.set_requires_grad([self.D_A, self.D_B], True)
-        self.optimizer_D.zero_grad()   # set D_A and D_B's gradients to zero
+        self.optimizer_D_A.zero_grad()   # set D_A and D_B's gradients to zero
+        self.optimizer_D_B.zero_grad()   # set D_A and D_B's gradients to zero
         self.backward_D_A()      # calculate gradients for D_A
         self.backward_D_B()      # calculate graidents for D_B
-        self.optimizer_D.step()  # update D_A and D_B's weights
+        self.optimizer_D_A.step()  # update D_A and D_B's weights
+        self.optimizer_D_B.step()  # update D_A and D_B's weights
 
 
     def backward_G(self):
@@ -66,15 +72,25 @@ class CycleGAN():
         '''
 
         # GAN loss D_A(G_A(A))
-        self.loss_G_A = self.criterionGAN(self.D_A(self.fake_B), torch.ones((self.fake_B.shape[0],1)))
+        self.loss_G_A = self.criterionGAN(self.D_A(self.fake_B), torch.ones((self.fake_B.shape[0],1),device=self.device))
         # GAN loss D_B(G_B(B))
-        self.loss_G_B = self.criterionGAN(self.D_B(self.fake_A), torch.ones((self.fake_A.shape[0],1)))
+        self.loss_G_B = self.criterionGAN(self.D_B(self.fake_A), torch.ones((self.fake_A.shape[0],1),device=self.device))
         # Forward cycle loss || G_B(G_A(A)) - A||
-        self.loss_cycle_A = self.criterionCycle(self.rec_A, self.real_A) * lambda_A
+        tail = torch.zeros(self.real_A.shape[1]-self.rec_A.shape[1],device=self.device).long()
+        tail = tail.repeat(self.real_A.shape[0],1)
+        one_hot = torch.zeros((tail.shape[0], tail.shape[1],self.rec_A.shape[-1]),device=self.device)
+        tail = one_hot.scatter_(-1, tail.unsqueeze(-1), 1.).float()
+        temp = torch.hstack((self.rec_A,tail))
+        self.loss_cycle_A = self.criterionCycle(temp.reshape(-1,temp.shape[-1]), self.real_A.reshape(-1)).mean() * lambda_A
         # Backward cycle loss || G_A(G_B(B)) - B||
-        self.loss_cycle_B = self.criterionCycle(self.rec_B, self.real_B) * lambda_B
+        tail = torch.zeros(self.real_B.shape[1]-self.rec_B.shape[1],device=self.device).long()
+        tail = tail.repeat(self.real_B.shape[0],1)
+        one_hot = torch.zeros((tail.shape[0], tail.shape[1],self.rec_B.shape[-1]),device=self.device)
+        tail = one_hot.scatter_(-1, tail.unsqueeze(-1), 1.).float()
+        temp = torch.hstack((self.rec_B,tail))
+        self.loss_cycle_B = self.criterionCycle(temp.reshape(-1,temp.shape[-1]), self.real_B.reshape(-1)).mean() * lambda_B
         # combined loss and calculate gradients
-        self.loss_G = self.loss_G_A + self.loss_G_B + self.loss_cycle_A + self.loss_cycle_B + self.loss_idt_A# + self.loss_idt_B
+        self.loss_G = self.loss_G_A + self.loss_G_B + self.loss_cycle_A + self.loss_cycle_B# + self.loss_idt_A + self.loss_idt_B
         self.loss_G.backward()
 
 
@@ -89,10 +105,10 @@ class CycleGAN():
         """
         # Real
         pred_real = D(real)
-        loss_D_real = self.criterionGAN(pred_real, torch.ones((self.pred_real.shape[0],1)))
+        loss_D_real = self.criterionGAN(pred_real, torch.ones((pred_real.shape[0],1),device=self.device))
         # Fake
         pred_fake = D(fake.detach())
-        loss_D_fake = self.criterionGAN(pred_fake, torch.zeros((self.pred_fake.shape[0],1)))
+        loss_D_fake = self.criterionGAN(pred_fake, torch.zeros((pred_fake.shape[0],1),device=self.device))
         # Combined loss and calculate gradients
         loss_D = (loss_D_real + loss_D_fake) * 0.5
         loss_D.backward()

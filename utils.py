@@ -59,18 +59,21 @@ def tokenize(text_data, tokenizer, max_length, padding = True):
     attention_mask = encoding['attention_mask']
     
     return input_ids, attention_mask
-def get_train_Dataset(dataset, tokenizer):
-    print('get train data start')
-    train_sentence = [x['en'] for x in dataset]
-    train_target = [x[target_language] for x in dataset]
-
-  
-    model1_input_ids, model1_input_attention_mask = tokenize(train_sentence, tokenizer, max_length = max_length)
-  
-    model1_target_ids, model1_target_attention_mask = tokenize(train_target, tokenizer, max_length = max_length)
- 
-    train_data = TensorDataset(model1_input_ids, model1_input_attention_mask, model1_target_ids, model1_target_attention_mask)
+def get_Dataset_chaos(dataset, tokenizer,max_length):
+    b_sentence = [x['de'] for x in dataset]
+    a_sentence = [x['en'] for x in dataset]
+    a_ids, a_ids_attn = tokenize(a_sentence, tokenizer, max_length = max_length)
+    shuffle_index = torch.randperm(a_ids.shape[0])
+    a_ids=a_ids[shuffle_index]
+    a_ids_attn=a_ids_attn[shuffle_index]
     
-    print('get train data end')
-   
+    b_ids, b_ids_attn = tokenize(b_sentence, tokenizer, max_length = max_length)
+    train_data = TensorDataset(a_ids, a_ids_attn, b_ids, b_ids_attn)
+    return train_data
+def get_Dataset(dataset, tokenizer,max_length):
+    b_sentence = [x['de'] for x in dataset]
+    a_sentence = [x['en'] for x in dataset]
+    a_ids, a_ids_attn = tokenize(a_sentence, tokenizer, max_length = max_length)
+    b_ids, b_ids_attn = tokenize(b_sentence, tokenizer, max_length = max_length)
+    train_data = TensorDataset(a_ids, a_ids_attn, b_ids, b_ids_attn)
     return train_data
