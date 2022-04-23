@@ -9,5 +9,5 @@ mkdir log
 mkdir model
 rm -f ./log/*.txt
 rm -f ./tensorboard/*
-python main.py --train_num_points 100000 --valid_num_points 2000 --test_iter 5000 --rep_iter 1000 --batch_size 40 --exp_name servertest
+python main.py --train_num_points 100000 --valid_num_points 2000 --test_iter 25000 --rep_iter 2000 --batch_size 48 --exp_name servertest
 
