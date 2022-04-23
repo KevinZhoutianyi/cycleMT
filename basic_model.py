@@ -45,6 +45,11 @@ class D(nn.Module):
         self.embedding = Embedding_(self.encoder.embed_tokens).requires_grad_()
         self.classifier = torch.nn.Linear(in_features=512, out_features=1, bias=True)
         
+    def set_require_grad(self,require):
+        for param in self.encoder.parameters():
+            param.requires_grad = require
+        self.embedding.requires_grad_ = require
+        self.classifier.requires_grad_ = require
     def forward(self,x):
         x_emb = self.embedding(x)
         distr = self.encoder(inputs_embeds=x_emb).last_hidden_state
@@ -58,7 +63,9 @@ class G(nn.Module):
         self.name = name
         self.tokenizer = tokenizer
         self.tokenzied_prefix = tokenize([prefix],tokenizer,512,True)[0].squeeze()
+        self.tokenzied_prefix.require_grad = False
         self.tokenzied_prefix_attn = tokenize([prefix],tokenizer,512,True)[1].squeeze()
+        self.tokenzied_prefix_attn.require_grad = False
         self.args = args
         self.model = pretrained
         self.encoder = self.model.get_encoder()
@@ -77,8 +84,8 @@ class G(nn.Module):
         generate_id = self.model.generate(x,num_beams=1)
         att = (generate_id>0.5).long()
         x_emb = self.embedding(x_)
-        distr = self.model(inputs_embeds=x_emb, attention_mask=x_attn, labels = generate_id, decoder_attention_mask = torch.ones_like(generate_id).long()).logits
-        one_hot = torch.zeros(generate_id.shape[0], generate_id.shape[1],distr.shape[-1], device=torch.device('cuda:0'))
+        distr = self.model(inputs_embeds=x_emb, attention_mask=x_attn, labels = generate_id, decoder_attention_mask = torch.ones_like(generate_id,requires_grad=False).long()).logits
+        one_hot = torch.zeros(generate_id.shape[0], generate_id.shape[1],distr.shape[-1], device=torch.device('cuda:0'),requires_grad=False)
         one_hot_output = one_hot.scatter_(-1, generate_id.unsqueeze(-1), 1.).float().detach() + distr - distr.detach()
         return one_hot_output,att
     def add_prefix(self,x,x_attn):
@@ -86,7 +93,7 @@ class G(nn.Module):
         if(len(x.shape)==2):
             x = torch.hstack((prefix,x))
         else:
-            one_hot = torch.zeros(x.shape[0], prefix.shape[1],x.shape[-1], device=torch.device('cuda:0'))
+            one_hot = torch.zeros(x.shape[0], prefix.shape[1],x.shape[-1], device=torch.device('cuda:0'),requires_grad=False)
             prefix = one_hot.scatter_(-1, prefix.unsqueeze(-1), 1.).float()
             
             x = torch.hstack((prefix,x))
@@ -96,7 +103,15 @@ class G(nn.Module):
     def generate(self, input_ids, num_beams = 4, max_length=512):#long training time!
         output_ids = self.model.generate( input_ids = input_ids, num_beams = num_beams, early_stopping = True, max_length = max_length, length_penalty =0.6, repetition_penalty = 0.8)
         return output_ids
-
+    def test_generate(self, x, num_beams = 4, max_length=512):
+        prefix = self.tokenzied_prefix.repeat(x.shape[0],1).cuda()
+        x = torch.hstack((prefix,x))
+        output_ids = self.model.generate( input_ids = x, num_beams = num_beams, early_stopping = True, max_length = max_length, length_penalty =0.6, repetition_penalty = 0.8)
+        return output_ids
+    def forward(self, input_ids, input_attn, target_ids = None, target_attn = None):
+        inp_emb = self.embedding(input_ids)
+        out = self.model(inputs_embeds = inp_emb, attention_mask = input_attn, labels = target_ids, decoder_attention_mask = target_attn, return_dict=True)
+        return out
 
 
 # class Embedding_(torch.nn.Module):

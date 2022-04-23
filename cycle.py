@@ -16,11 +16,18 @@ class CycleGAN():
         self.D_B = D(args=args,pretrained=DB,name="D_B").to(self.device)
         self.tokenizer = tokenizer
         self.args = args
+        self.bs = args.batch_size
+        self.GB_cycle_meter = AvgrageMeter()
+        self.GA_cycle_meter = AvgrageMeter()
+        self.GAB_once_meter = AvgrageMeter()
+        self.GBA_once_meter = AvgrageMeter()
+        self.DA_meter = AvgrageMeter()
+        self.DB_meter = AvgrageMeter()
         self.fake_A_pool = Pool()  
         self.fake_B_pool = Pool()  
         self.criterionGAN = torch.nn.MSELoss()
-        self.criterionCycle = torch.nn.CrossEntropyLoss( reduction='none')
-        self.criterionIdt = torch.nn.CrossEntropyLoss( reduction='none')
+        self.criterionCycle = torch.nn.CrossEntropyLoss( )
+        self.criterionIdt = torch.nn.CrossEntropyLoss( )
         self.optimizer_G_AB = Adafactor(self.G_AB.parameters(), lr = args.G_lr ,scale_parameter=True, relative_step=False , warmup_init=False,clip_threshold=1,beta1=0,eps=( 1e-30,0.001))
         self.optimizer_G_BA = Adafactor(self.G_BA.parameters(), lr = args.G_lr ,scale_parameter=True, relative_step=False , warmup_init=False,clip_threshold=1,beta1=0,eps=( 1e-30,0.001))
         self.optimizer_D_A = Adafactor(self.D_A.parameters(), lr = args.D_lr ,scale_parameter=True, relative_step=False , warmup_init=False,clip_threshold=1,beta1=0,eps=( 1e-30,0.001))
@@ -50,7 +57,11 @@ class CycleGAN():
         self.optimizer_D_A.step()  # update D_A and D_B's weights
         self.optimizer_D_B.step()  # update D_A and D_B's weights
 
-
+    def trainmode(self):
+        self.G_AB.train()
+        self.G_BA.train()
+        self.D_A.train()
+        self.D_B.train()
     def backward_G(self):
         """Calculate the loss for generators G_A and G_B"""
         lambda_idt = self.args.lambda_identity
@@ -72,26 +83,38 @@ class CycleGAN():
         '''
 
         # GAN loss D_A(G_A(A))
+
         self.loss_G_A = self.criterionGAN(self.D_A(self.fake_B), torch.ones((self.fake_B.shape[0],1),device=self.device))
         # GAN loss D_B(G_B(B))
         self.loss_G_B = self.criterionGAN(self.D_B(self.fake_A), torch.ones((self.fake_A.shape[0],1),device=self.device))
+
+
         # Forward cycle loss || G_B(G_A(A)) - A||
-        tail = torch.zeros(self.real_A.shape[1]-self.rec_A.shape[1],device=self.device).long()
-        tail = tail.repeat(self.real_A.shape[0],1)
-        one_hot = torch.zeros((tail.shape[0], tail.shape[1],self.rec_A.shape[-1]),device=self.device)
-        tail = one_hot.scatter_(-1, tail.unsqueeze(-1), 1.).float()
-        temp = torch.hstack((self.rec_A,tail))
-        self.loss_cycle_A = self.criterionCycle(temp.reshape(-1,temp.shape[-1]), self.real_A.reshape(-1)).mean() * lambda_A
+        self.tail = torch.zeros(self.real_A.shape[1]-self.rec_A.shape[1],device=self.device,requires_grad=False).long()
+        self.tail = self.tail.repeat(self.real_A.shape[0],1)
+        self.one_hot = torch.zeros((self.tail.shape[0], self.tail.shape[1],self.rec_A.shape[-1]),device=self.device,requires_grad=False)
+        self.tail = self.one_hot.scatter_(-1, self.tail.unsqueeze(-1), 1.).float()
+        self.temp = torch.hstack((self.rec_A,self.tail))
+        self.loss_cycle_A = self.criterionCycle(self.temp.reshape(-1,self.temp.shape[-1]), self.real_A.reshape(-1)).mean() * lambda_A
+
+
         # Backward cycle loss || G_A(G_B(B)) - B||
-        tail = torch.zeros(self.real_B.shape[1]-self.rec_B.shape[1],device=self.device).long()
-        tail = tail.repeat(self.real_B.shape[0],1)
-        one_hot = torch.zeros((tail.shape[0], tail.shape[1],self.rec_B.shape[-1]),device=self.device)
-        tail = one_hot.scatter_(-1, tail.unsqueeze(-1), 1.).float()
-        temp = torch.hstack((self.rec_B,tail))
-        self.loss_cycle_B = self.criterionCycle(temp.reshape(-1,temp.shape[-1]), self.real_B.reshape(-1)).mean() * lambda_B
+        self.tail = torch.zeros(self.real_B.shape[1]-self.rec_B.shape[1],device=self.device,requires_grad=False).long()
+        self.tail =self.tail.repeat(self.real_B.shape[0],1)
+        self.one_hot = torch.zeros((self.tail.shape[0], self.tail.shape[1],self.rec_B.shape[-1]),device=self.device,requires_grad=False)
+        self.tail = self.one_hot.scatter_(-1, self.tail.unsqueeze(-1), 1.).float()
+        self.temp = torch.hstack((self.rec_B,self.tail))
+        self.loss_cycle_B = self.criterionCycle(self.temp.reshape(-1,self.temp.shape[-1]), self.real_B.reshape(-1)).mean() * lambda_B
+
+
         # combined loss and calculate gradients
         self.loss_G = self.loss_G_A + self.loss_G_B + self.loss_cycle_A + self.loss_cycle_B# + self.loss_idt_A + self.loss_idt_B
+        self.GA_cycle_meter.update(self.loss_cycle_A.item(),self.bs)
+        self.GB_cycle_meter.update(self.loss_cycle_B.item(),self.bs)
+        self.GAB_once_meter.update(self.loss_G_A.item(),self.bs)
+        self.GBA_once_meter.update(self.loss_G_B.item(),self.bs)
         self.loss_G.backward()
+        
 
 
     def backward_D_basic(self, D, real, fake):
@@ -105,10 +128,10 @@ class CycleGAN():
         """
         # Real
         pred_real = D(real)
-        loss_D_real = self.criterionGAN(pred_real, torch.ones((pred_real.shape[0],1),device=self.device))
+        loss_D_real = self.criterionGAN(pred_real, torch.ones((pred_real.shape[0],1),device=self.device,requires_grad=False))
         # Fake
         pred_fake = D(fake.detach())
-        loss_D_fake = self.criterionGAN(pred_fake, torch.zeros((pred_fake.shape[0],1),device=self.device))
+        loss_D_fake = self.criterionGAN(pred_fake, torch.zeros((pred_fake.shape[0],1),device=self.device,requires_grad=False))
         # Combined loss and calculate gradients
         loss_D = (loss_D_real + loss_D_fake) * 0.5
         loss_D.backward()
@@ -118,11 +141,14 @@ class CycleGAN():
         """Calculate GAN loss for discriminator D_A"""
         fake_B = self.fake_B_pool.query(self.fake_B)
         self.loss_D_A = self.backward_D_basic(self.D_A, self.real_B, fake_B)
+        self.DA_meter.update(self.loss_D_A.item(),self.bs)
 
     def backward_D_B(self):
         """Calculate GAN loss for discriminator D_B"""
-        fake_A = self.fake_A_pool.query(self.fake_A)
+        fake_A = self.fake_A_pool.query(self.fake_A)#TODO:make leak here!
         self.loss_D_B = self.backward_D_basic(self.D_B, self.real_A, fake_A)
+
+        self.DB_meter.update(self.loss_D_B.item(),self.bs)
 
         
     def set_requires_grad(self, nets, requires_grad=False):
@@ -130,5 +156,19 @@ class CycleGAN():
             nets = [nets]
         for net in nets:
             if net is not None:
-                for param in net.parameters():
-                    param.requires_grad = requires_grad
+                net.set_require_grad(requires_grad)
+    def getLoss(self):
+        ret = {}
+        ret['GB_cycle_meter'] = self.GB_cycle_meter.avg
+        ret['GA_cycle_meter'] = self.GA_cycle_meter.avg 
+        ret['GAB_once_meter'] = self.GAB_once_meter.avg
+        ret['GBA_once_meter'] = self.GBA_once_meter.avg 
+        ret['DA_meter'] = self.DA_meter.avg 
+        ret['DB_meter'] = self.DB_meter.avg 
+        self.GB_cycle_meter.reset()
+        self.GA_cycle_meter.reset() 
+        self.GAB_once_meter.reset()
+        self.GBA_once_meter.reset() 
+        self.DA_meter.reset()
+        self.DB_meter.reset() 
+        return ret
