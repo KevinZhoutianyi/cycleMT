@@ -1,8 +1,8 @@
-
-
 # %%
+
 import os
 os.getcwd() 
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
 import warnings
 from test import *
 warnings.filterwarnings("ignore")
