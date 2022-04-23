@@ -122,7 +122,7 @@ for epoch in range(args.epochs):
 
     logging.info(f"\n\n  ----------------epoch:{epoch}----------------")
     my_train(train_dataloader,cycleGAN,total_iter,args,logging,valid_dataloader,tokenizer,wandb)
-    my_test(valid_dataloader,cycleGAN,tokenizer,logging,wandb)
+    # my_test(valid_dataloader,cycleGAN,tokenizer,logging,wandb)
     #TODO:cycgan.savemodel
 
 
