@@ -43,10 +43,10 @@ if(True):
     parser.add_argument('--G_BA_model_name', type=str,              default='Onlydrinkwater/T5-small-de-en',      help='model_name')
     parser.add_argument('--D_A_model_name', type=str,               default='t5-small',      help='model_name')
     parser.add_argument('--D_B_model_name', type=str,               default='Onlydrinkwater/T5-small-de-en',      help='model_name')
-    parser.add_argument('--exp_name', type=str,                     default='CYCLE!10',      help='experiment name')
+    parser.add_argument('--exp_name', type=str,                     default='CYCLE!',      help='experiment name')
     parser.add_argument('--rep_num', type=int,                      default=25,      help='report times for 1 epoch')
     parser.add_argument('--rep_iter', type=int,                     default=1000,      help='report times for 1 epoch')
-    parser.add_argument('--test_iter', type=int,                    default=5000,      help='report times for 1 epoch')
+    parser.add_argument('--test_iter', type=int,                    default=25000,      help='report times for 1 epoch')
     parser.add_argument('--test_num', type=int,                     default=4,      help='test times for 1 epoch')
 
     parser.add_argument('--epochs', type=int,                       default=50,     help='num of training epochs')
@@ -54,8 +54,8 @@ if(True):
     parser.add_argument('--G_lr', type=float,                       default=0.00001,   help='learning rate for G')
     parser.add_argument('--D_lr', type=float,                       default=0.00001,   help='learning rate for D')
     parser.add_argument('--lambda_identity', type=float,            default=0.5,   help='')
-    parser.add_argument('--lambda_A', type=float,                   default=10,   help='')
-    parser.add_argument('--lambda_B', type=float,                   default=10,   help='')
+    parser.add_argument('--lambda_A', type=float,                   default=0.01,   help='')
+    parser.add_argument('--lambda_B', type=float,                   default=0.01,   help='')
     parser.add_argument('--smoothing', type=float,                  default=0.1,    help='labelsmoothing')
 
 
