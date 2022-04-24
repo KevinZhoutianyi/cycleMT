@@ -16,9 +16,10 @@ def my_train(loader,model,total_iter,args,logging,valid_loader,tokenizer,wandb):
         b_attn = Variable(batch[3], requires_grad=False).to(device, non_blocking=False)
         model.set_input(a,a_attn,b,b_attn)
         model.optimize_parameters(total_iter)
-        if(total_iter%args.rep_iter == 0):
+        if(total_iter%args.rep_iter == 0 and total_iter<args.D_pretrain_iter):
             loss_dict = model.getLoss()
             logging.info(loss_dict)
+            logging.info(f"\t\t{step/len(loader)*100}%")
             wandb.log(loss_dict)
         if(total_iter%args.test_iter == 0 and total_iter>args.D_pretrain_iter):
             my_test(valid_loader,model,tokenizer,logging,wandb)
