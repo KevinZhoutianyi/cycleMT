@@ -56,7 +56,7 @@ if(True):
     parser.add_argument('--lambda_identity', type=float,            default=0.5,   help='')
     parser.add_argument('--lambda_A', type=float,                   default=0.01,   help='')
     parser.add_argument('--lambda_B', type=float,                   default=0.01,   help='')
-    parser.add_argument('--lambda_once', type=float,                default=0,   help='')
+    parser.add_argument('--lambda_once', type=float,                default=1,   help='')
     parser.add_argument('--smoothing', type=float,                  default=0.1,    help='labelsmoothing')
 
 
