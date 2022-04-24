@@ -32,10 +32,10 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 if(True):
     parser = argparse.ArgumentParser("main")
 
-    parser.add_argument('--valid_num_points', type=int,             default = 2000, help='validation data number')
-    parser.add_argument('--train_num_points', type=int,             default = 100000, help='train data number')
+    parser.add_argument('--valid_num_points', type=int,             default = 200, help='validation data number')
+    parser.add_argument('--train_num_points', type=int,             default = 1000, help='train data number')
 
-    parser.add_argument('--batch_size', type=int,                   default=32,     help='Batch size')
+    parser.add_argument('--batch_size', type=int,                   default=3,     help='Batch size')
     parser.add_argument('--max_length', type=int,                   default=512,     help='max_length')
 
     parser.add_argument('--gpu', type=int,                          default=0,      help='gpu device id')
@@ -45,8 +45,8 @@ if(True):
     parser.add_argument('--D_B_model_name', type=str,               default='Onlydrinkwater/T5-small-de-en',      help='model_name')
     parser.add_argument('--exp_name', type=str,                     default='CYCLE!',      help='experiment name')
     parser.add_argument('--rep_num', type=int,                      default=25,      help='report times for 1 epoch')
-    parser.add_argument('--rep_iter', type=int,                     default=1000,      help='report times for 1 epoch')
-    parser.add_argument('--test_iter', type=int,                    default=25000,      help='report times for 1 epoch')
+    parser.add_argument('--rep_iter', type=int,                     default=100,      help='report times for 1 epoch')
+    parser.add_argument('--test_iter', type=int,                    default=500,      help='report times for 1 epoch')
     parser.add_argument('--test_num', type=int,                     default=4,      help='test times for 1 epoch')
 
     parser.add_argument('--epochs', type=int,                       default=50,     help='num of training epochs')
@@ -56,13 +56,21 @@ if(True):
     parser.add_argument('--lambda_identity', type=float,            default=0.5,   help='')
     parser.add_argument('--lambda_A', type=float,                   default=0.01,   help='')
     parser.add_argument('--lambda_B', type=float,                   default=0.01,   help='')
+    parser.add_argument('--lambda_once', type=float,                default=0.01,   help='')
     parser.add_argument('--smoothing', type=float,                  default=0.1,    help='labelsmoothing')
 
 
     parser.add_argument('--valid_begin', type=int,                  default=1,      help='whether valid before train')
+    parser.add_argument('--train_G', type=int,                      default=1,      help='whether valid before train')
+    parser.add_argument('--train_D', type=int,                      default=1,      help='whether valid before train')
+    parser.add_argument('--D_pretrain_iter', type=int,              default=100,      help='whether valid before train')
 
 
     args = parser.parse_args()#(args=['--batch_size', '8',  '--no_cuda'])#used in ipynb
+    args.test_iter = args.test_iter//args.batch_size * args.batch_size
+    args.rep_iter = args.rep_iter//args.batch_size * args.batch_size
+    print('args.test_iter',args.test_iter)
+    print('args.rep_iter',args.rep_iter)
 
 # %%
 import wandb
