@@ -40,14 +40,15 @@ class CycleGAN():
     def set_input(self,A,A_attn,B,B_attn):
         self.real_A,self.real_A_attn = A,A_attn
         self.real_B,self.real_B_attn = B,B_attn
-    def optimize_parameters(self):
-        self.forward()    
+    
+    def optimize_parameters_G(self):
         self.set_requires_grad([self.D_A, self.D_B], False)  # Ds require no gradients when optimizing Gs
         self.optimizer_G_AB.zero_grad()  # set G_A and G_B's gradients to zero
         self.optimizer_G_BA.zero_grad()  # set G_A and G_B's gradients to zero
         self.backward_G()             # calculate gradients for G_A and G_B
         self.optimizer_G_AB.step()       # update G_A and G_B's weights
         self.optimizer_G_BA.step()       # update G_A and G_B's weights
+    def optimize_parameters_D(self):
         # D_A and D_B
         self.set_requires_grad([self.D_A, self.D_B], True)
         self.optimizer_D_A.zero_grad()   # set D_A and D_B's gradients to zero
@@ -67,6 +68,7 @@ class CycleGAN():
         lambda_idt = self.args.lambda_identity
         lambda_A = self.args.lambda_A
         lambda_B = self.args.lambda_B
+        lambda_once = self.args.lambda_once
 
         '''
         # Identity loss TODO: is it useless for MT?
@@ -95,7 +97,7 @@ class CycleGAN():
         self.one_hot = torch.zeros((self.tail.shape[0], self.tail.shape[1],self.rec_A.shape[-1]),device=self.device,requires_grad=False)
         self.tail = self.one_hot.scatter_(-1, self.tail.unsqueeze(-1), 1.).float()
         self.temp = torch.hstack((self.rec_A,self.tail))
-        self.loss_cycle_A = self.criterionCycle(self.temp.reshape(-1,self.temp.shape[-1]), self.real_A.reshape(-1)).mean() * lambda_A
+        self.loss_cycle_A = self.criterionCycle(self.temp.reshape(-1,self.temp.shape[-1]), self.real_A.reshape(-1)).mean() 
 
 
         # Backward cycle loss || G_A(G_B(B)) - B||
@@ -104,11 +106,11 @@ class CycleGAN():
         self.one_hot = torch.zeros((self.tail.shape[0], self.tail.shape[1],self.rec_B.shape[-1]),device=self.device,requires_grad=False)
         self.tail = self.one_hot.scatter_(-1, self.tail.unsqueeze(-1), 1.).float()
         self.temp = torch.hstack((self.rec_B,self.tail))
-        self.loss_cycle_B = self.criterionCycle(self.temp.reshape(-1,self.temp.shape[-1]), self.real_B.reshape(-1)).mean() * lambda_B
+        self.loss_cycle_B = self.criterionCycle(self.temp.reshape(-1,self.temp.shape[-1]), self.real_B.reshape(-1)).mean() 
 
 
         # combined loss and calculate gradients
-        self.loss_G = self.loss_G_A + self.loss_G_B + self.loss_cycle_A + self.loss_cycle_B# + self.loss_idt_A + self.loss_idt_B
+        self.loss_G =  self.loss_cycle_A* lambda_A + self.loss_cycle_B*lambda_B+self.loss_G_A*lambda_once + self.loss_G_B*lambda_once# + self.loss_idt_A + self.loss_idt_B#
         self.GA_cycle_meter.update(self.loss_cycle_A.item(),self.bs)
         self.GB_cycle_meter.update(self.loss_cycle_B.item(),self.bs)
         self.GAB_once_meter.update(self.loss_G_A.item(),self.bs)
