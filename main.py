@@ -51,8 +51,8 @@ if(True):
 
     parser.add_argument('--epochs', type=int,                       default=50,     help='num of training epochs')
 
-    parser.add_argument('--G_lr', type=float,                       default=0.00001,   help='learning rate for G')
-    parser.add_argument('--D_lr', type=float,                       default=0.00001,   help='learning rate for D')
+    parser.add_argument('--G_lr', type=float,                       default=1e-6,   help='learning rate for G')
+    parser.add_argument('--D_lr', type=float,                       default=1e-6,   help='learning rate for D')
     parser.add_argument('--lambda_identity', type=float,            default=0.5,   help='')
     parser.add_argument('--lambda_A', type=float,                   default=0.01,   help='')
     parser.add_argument('--lambda_B', type=float,                   default=0.01,   help='')
