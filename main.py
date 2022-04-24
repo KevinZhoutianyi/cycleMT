@@ -56,7 +56,7 @@ if(True):
     parser.add_argument('--lambda_identity', type=float,            default=0.5,   help='')
     parser.add_argument('--lambda_A', type=float,                   default=0.01,   help='')
     parser.add_argument('--lambda_B', type=float,                   default=0.01,   help='')
-    parser.add_argument('--lambda_once', type=float,                default=0.01,   help='')
+    parser.add_argument('--lambda_once', type=float,                default=0,   help='')
     parser.add_argument('--smoothing', type=float,                  default=0.1,    help='labelsmoothing')
 
 
@@ -70,7 +70,7 @@ if(True):
     args.test_iter = args.test_iter//args.batch_size * args.batch_size
     args.rep_iter = args.rep_iter//args.batch_size * args.batch_size
     print('args.test_iter',args.test_iter)
-    print('args.rep_iter',args.rep_iter)
+    print('args.rep_iter',args.rep_iter)#1
 
 # %%
 import wandb

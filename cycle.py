@@ -41,22 +41,34 @@ class CycleGAN():
         self.real_A,self.real_A_attn = A,A_attn
         self.real_B,self.real_B_attn = B,B_attn
     
-    def optimize_parameters_G(self):
-        self.set_requires_grad([self.D_A, self.D_B], False)  # Ds require no gradients when optimizing Gs
-        self.optimizer_G_AB.zero_grad()  # set G_A and G_B's gradients to zero
-        self.optimizer_G_BA.zero_grad()  # set G_A and G_B's gradients to zero
-        self.backward_G()             # calculate gradients for G_A and G_B
-        self.optimizer_G_AB.step()       # update G_A and G_B's weights
-        self.optimizer_G_BA.step()       # update G_A and G_B's weights
-    def optimize_parameters_D(self):
-        # D_A and D_B
-        self.set_requires_grad([self.D_A, self.D_B], True)
-        self.optimizer_D_A.zero_grad()   # set D_A and D_B's gradients to zero
-        self.optimizer_D_B.zero_grad()   # set D_A and D_B's gradients to zero
-        self.backward_D_A()      # calculate gradients for D_A
-        self.backward_D_B()      # calculate graidents for D_B
-        self.optimizer_D_A.step()  # update D_A and D_B's weights
-        self.optimizer_D_B.step()  # update D_A and D_B's weights
+    def optimize_parameters(self,cur_iter):
+        if(cur_iter<self.args.D_pretrain_iter):
+            self.set_requires_grad([self.G_AB, self.G_BA], False)
+            self.forward()
+            self.optimizer_D_A.zero_grad()   # set D_A and D_B's gradients to zero
+            self.optimizer_D_B.zero_grad()   # set D_A and D_B's gradients to zero
+            self.backward_D_A()      # calculate gradients for D_A
+            self.backward_D_B()      # calculate graidents for D_B
+            self.optimizer_D_A.step()  # update D_A and D_B's weights
+            self.optimizer_D_B.step()  # update D_A and D_B's weights
+            self.set_requires_grad([self.G_AB, self.G_BA], True)
+
+        else:
+            self.forward()
+            self.set_requires_grad([self.D_A, self.D_B], False)  # Ds require no gradients when optimizing Gs
+            self.optimizer_G_AB.zero_grad()  # set G_A and G_B's gradients to zero
+            self.optimizer_G_BA.zero_grad()  # set G_A and G_B's gradients to zero
+            self.backward_G()             # calculate gradients for G_A and G_B
+            self.optimizer_G_AB.step()       # update G_A and G_B's weights
+            self.optimizer_G_BA.step()       # update G_A and G_B's weights
+            self.set_requires_grad([self.D_A, self.D_B], True)
+            self.optimizer_D_A.zero_grad()   # set D_A and D_B's gradients to zero
+            self.optimizer_D_B.zero_grad()   # set D_A and D_B's gradients to zero
+            self.backward_D_A()      # calculate gradients for D_A
+            self.backward_D_B()      # calculate graidents for D_B
+            self.optimizer_D_A.step()  # update D_A and D_B's weights
+            self.optimizer_D_B.step()  # update D_A and D_B's weights
+        
 
     def trainmode(self):
         self.G_AB.train()

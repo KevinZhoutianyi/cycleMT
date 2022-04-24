@@ -70,6 +70,10 @@ class G(nn.Module):
         self.model = pretrained
         self.encoder = self.model.get_encoder()
         self.embedding = Embedding_(self.encoder.embed_tokens).requires_grad_()
+    def set_require_grad(self,require):
+        self.embedding.requires_grad_ = require
+        for p in self.model.parameters():
+            p.requires_grad = require
     def gumble_generate(self,x,x_attn):
         '''
         input is (batchsize,sentencelength)
