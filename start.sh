@@ -11,6 +11,6 @@ rm -f ./log/*.txt
 rm -f ./tensorboard/*
 python main.py --train_num_points 100000 \
     --valid_num_points 2000 --test_iter 25000 \
-    --rep_iter 2000 --batch_size 16 \
-    --exp_name servertest --D_pretrain_iter 5000 --lambda_once 0.1
+    --rep_iter 2000 --batch_size 44 \
+    --exp_name servertest --D_pretrain_iter 5000 --lambda_once 0
 
