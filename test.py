@@ -53,8 +53,8 @@ def my_test(loader,model,tokenizer,logging,wandb):
             logging.info(f'GBAloss:\t{GBA_loss.item()}')
             logging.info(f'a_decoded[:2]:{a_label_decoded[:2]}')
             logging.info(f'pred_b_decoded[:2]:{b_pred_decoded[:2]}')
-            logging.info(f'a_decoded[:2]:{b_label_decoded[:2]}')
-            logging.info(f'pred_b_decoded[:2]:{a_pred_decoded[:2]}')
+            logging.info(f'b_decoded[:2]:{b_label_decoded[:2]}')
+            logging.info(f'pred_a_decoded[:2]:{a_pred_decoded[:2]}')
 
     logging.info('computing score...') 
     GAB_sacrebleu_score = GAB_metric_sacrebleu.compute()

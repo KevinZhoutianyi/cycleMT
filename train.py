@@ -23,5 +23,5 @@ def my_train(loader,model,total_iter,args,logging,valid_loader,tokenizer,wandb):
             loss_dict = model.getLoss()
             logging.info(loss_dict)
             wandb.log(loss_dict)
-        if(total_iter%args.test_iter == 0):
+        if(total_iter%args.test_iter == 0 and total_iter>args.D_pretrain_iter):
             my_test(valid_loader,model,tokenizer,logging,wandb)
