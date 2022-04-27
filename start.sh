@@ -7,6 +7,7 @@ pip install sacrebleu==1.5.1
 pip install wandb
 mkdir log
 mkdir model
+mkdir checkpoint
 rm -f ./log/*.txt
 rm -f ./tensorboard/*
 python main.py --train_num_points 100000 \
