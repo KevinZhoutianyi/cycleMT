@@ -42,19 +42,8 @@ class CycleGAN():
         self.real_A,self.real_A_attn = A,A_attn
         self.real_B,self.real_B_attn = B,B_attn
     
-    def optimize_parameters(self,cur_iter):
-        if(cur_iter<self.args.D_pretrain_iter):
-            self.set_requires_grad([self.G_AB, self.G_BA], False)
-            self.forward()
-            self.optimizer_D_A.zero_grad()   # set D_A and D_B's gradients to zero
-            self.optimizer_D_B.zero_grad()   # set D_A and D_B's gradients to zero
-            self.backward_D_A()      # calculate gradients for D_A
-            self.backward_D_B()      # calculate graidents for D_B
-            self.optimizer_D_A.step()  # update D_A and D_B's weights
-            self.optimizer_D_B.step()  # update D_A and D_B's weights
-            self.set_requires_grad([self.G_AB, self.G_BA], True)
-
-        else:
+    def optimize_parameters(self,trainD=True,trainG=True):
+        if(trainD and trainG):
             self.forward()
             self.set_requires_grad([self.D_A, self.D_B], False)  # Ds require no gradients when optimizing Gs
             self.optimizer_G_AB.zero_grad()  # set G_A and G_B's gradients to zero
@@ -69,6 +58,26 @@ class CycleGAN():
             self.backward_D_B()      # calculate graidents for D_B
             self.optimizer_D_A.step()  # update D_A and D_B's weights
             self.optimizer_D_B.step()  # update D_A and D_B's weights
+        elif(trainG):
+            self.forward()
+            self.set_requires_grad([self.D_A, self.D_B], False)  # Ds require no gradients when optimizing Gs
+            self.optimizer_G_AB.zero_grad()  # set G_A and G_B's gradients to zero
+            self.optimizer_G_BA.zero_grad()  # set G_A and G_B's gradients to zero
+            self.backward_G()             # calculate gradients for G_A and G_B
+            self.optimizer_G_AB.step()       # update G_A and G_B's weights
+            self.optimizer_G_BA.step()       # update G_A and G_B's weights
+            self.set_requires_grad([self.D_A, self.D_B], True)
+        elif(trainD):
+            self.set_requires_grad([self.G_AB, self.G_BA], False)
+            self.forward()
+            self.optimizer_D_A.zero_grad()   # set D_A and D_B's gradients to zero
+            self.optimizer_D_B.zero_grad()   # set D_A and D_B's gradients to zero
+            self.backward_D_A()      # calculate gradients for D_A
+            self.backward_D_B()      # calculate graidents for D_B
+            self.optimizer_D_A.step()  # update D_A and D_B's weights
+            self.optimizer_D_B.step()  # update D_A and D_B's weights
+            self.set_requires_grad([self.G_AB, self.G_BA], True)
+            
         
 
     def trainmode(self):
@@ -99,9 +108,9 @@ class CycleGAN():
 
         # GAN loss D_A(G_A(A))
 
-        self.loss_G_A = self.criterionGAN(self.D_A(self.fake_B), torch.ones((self.fake_B.shape[0],1),device=self.device))
+        self.loss_G_A = self.criterionGAN(self.D_A(self.fake_B), torch.ones((self.fake_B.shape[0],1),device=self.device))*lambda_once
         # GAN loss D_B(G_B(B))
-        self.loss_G_B = self.criterionGAN(self.D_B(self.fake_A), torch.ones((self.fake_A.shape[0],1),device=self.device))
+        self.loss_G_B = self.criterionGAN(self.D_B(self.fake_A), torch.ones((self.fake_A.shape[0],1),device=self.device))*lambda_once
 
 
         # Forward cycle loss || G_B(G_A(A)) - A||
@@ -110,7 +119,7 @@ class CycleGAN():
         self.one_hot = torch.zeros((self.tail.shape[0], self.tail.shape[1],self.rec_A.shape[-1]),device=self.device,requires_grad=False)
         self.tail = self.one_hot.scatter_(-1, self.tail.unsqueeze(-1), 1.).float()
         self.temp = torch.hstack((self.rec_A,self.tail))
-        self.loss_cycle_A = self.criterionCycle(self.temp.reshape(-1,self.temp.shape[-1]), self.real_A.reshape(-1)).mean() 
+        self.loss_cycle_A = self.criterionCycle(self.temp.reshape(-1,self.temp.shape[-1]), self.real_A.reshape(-1)).mean() * lambda_A
 
 
         # Backward cycle loss || G_A(G_B(B)) - B||
@@ -119,11 +128,11 @@ class CycleGAN():
         self.one_hot = torch.zeros((self.tail.shape[0], self.tail.shape[1],self.rec_B.shape[-1]),device=self.device,requires_grad=False)
         self.tail = self.one_hot.scatter_(-1, self.tail.unsqueeze(-1), 1.).float()
         self.temp = torch.hstack((self.rec_B,self.tail))
-        self.loss_cycle_B = self.criterionCycle(self.temp.reshape(-1,self.temp.shape[-1]), self.real_B.reshape(-1)).mean() 
+        self.loss_cycle_B = self.criterionCycle(self.temp.reshape(-1,self.temp.shape[-1]), self.real_B.reshape(-1)).mean() *lambda_B
 
 
         # combined loss and calculate gradients
-        self.loss_G =  self.loss_cycle_A* lambda_A + self.loss_cycle_B*lambda_B+self.loss_G_A*lambda_once + self.loss_G_B*lambda_once# + self.loss_idt_A + self.loss_idt_B#
+        self.loss_G =  self.loss_cycle_A + self.loss_cycle_B+self.loss_G_A + self.loss_G_B# + self.loss_idt_A + self.loss_idt_B#
         self.GA_cycle_meter.update(self.loss_cycle_A.item(),self.bs)
         self.GB_cycle_meter.update(self.loss_cycle_B.item(),self.bs)
         self.GAB_once_meter.update(self.loss_G_A.item(),self.bs)
