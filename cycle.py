@@ -15,8 +15,10 @@ class CycleGAN():
         self.G_BA = G(args=args,pretrained=GBA,name="G_BA",tokenizer=tokenizer,prefix='translate German to English: ').to(self.device)
         if(args.load_D == 1):
             print("D_A and D_B are loaded")
-            self.D_A = torch.load('./model/D_A.pt')
-            self.D_B = torch.load('./model/D_B.pt')
+            self.D_A = None
+            self.D_A = torch.load('./model/D_A.pt').to(self.device)
+            self.D_B = None
+            self.D_B = torch.load('./model/D_B.pt').to(self.device)
         else:
             self.D_A = D(args=args,pretrained=DA,name="D_A").to(self.device)
             self.D_B = D(args=args,pretrained=DB,name="D_B").to(self.device)
@@ -161,9 +163,11 @@ class CycleGAN():
         We also call loss_D.backward() to calculate the gradients.
         """
         # Real
+        print(real)
         pred_real = D(real)
         loss_D_real = self.criterionGAN(pred_real, torch.ones((pred_real.shape[0],1),device=self.device,requires_grad=False))
         # Fake
+        print(torch.argmax(fake,-1))
         pred_fake = D(fake.detach())
         loss_D_fake = self.criterionGAN(pred_fake, torch.zeros((pred_fake.shape[0],1),device=self.device,requires_grad=False))
         # Combined loss and calculate gradients

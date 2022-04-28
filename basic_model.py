@@ -54,13 +54,12 @@ class D(nn.Module):
         self.classifier.requires_grad_ = require
     def forward(self,x):
         # print(self.name,'D_input',torch.argmax(x,-1))
-        x_emb = self.embedding(x)
-        distr = self.encoder(inputs_embeds=x_emb).last_hidden_state
-        distr = torch.mean(distr,1).squeeze()
-        distr = self.dropout(distr)
-        ret =  self.classifier(distr)
-        ret = self.relu(ret)
-        # print(self.name,"D_ret",ret)
+        x_emb = self.embedding(x)#
+        distr = self.encoder(inputs_embeds=x_emb).last_hidden_state#(bs,sentence length,512)
+        distr = distr[:,0,:].squeeze()#(bs,512)
+        distr = self.dropout(distr)#(bs,512)
+        ret =  self.classifier(distr)#(bs,1)
+        ret = self.relu(ret)#(bs,1)
         return ret
 
 class G(nn.Module):
