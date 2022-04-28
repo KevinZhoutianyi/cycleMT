@@ -36,12 +36,12 @@ class CycleGAN():
         self.criterionIdt = torch.nn.CrossEntropyLoss( )
         self.optimizer_G_AB = Adafactor(self.G_AB.parameters(), lr = args.G_lr ,scale_parameter=False, relative_step=False , warmup_init=False,clip_threshold=1,beta1=0,eps=( 1e-30,0.001))
         self.optimizer_G_BA = Adafactor(self.G_BA.parameters(), lr = args.G_lr ,scale_parameter=False, relative_step=False , warmup_init=False,clip_threshold=1,beta1=0,eps=( 1e-30,0.001))
-        self.optimizer_D_A = Adafactor(self.D_A.parameters(), lr = args.D_lr ,scale_parameter=False, relative_step=False , warmup_init=False,clip_threshold=1,beta1=0,eps=( 1e-30,0.001))
-        self.optimizer_D_B = Adafactor(self.D_B.parameters(), lr = args.D_lr ,scale_parameter=False, relative_step=False , warmup_init=False,clip_threshold=1,beta1=0,eps=( 1e-30,0.001))
+        # self.optimizer_D_A = Adafactor(self.D_A.parameters(), lr = args.D_lr ,scale_parameter=False, relative_step=False , warmup_init=False,clip_threshold=1,beta1=0,eps=( 1e-30,0.001))
+        # self.optimizer_D_B = Adafactor(self.D_B.parameters(), lr = args.D_lr ,scale_parameter=False, relative_step=False , warmup_init=False,clip_threshold=1,beta1=0,eps=( 1e-30,0.001))
         # self.optimizer_G_AB = torch.optim.Adam(self.G_AB.parameters(),  lr= args.G_lr , betas=(0.5, 0.999), weight_decay=args.G_weight_decay)
         # self.optimizer_G_BA = torch.optim.Adam(self.G_BA.parameters(),  lr= args.G_lr , betas=(0.5, 0.999), weight_decay=args.G_weight_decay)
-        # self.optimizer_D_A = torch.optim.Adam(self.D_A.parameters(),  lr= args.D_lr , betas=(0.5, 0.999), weight_decay=args.D_weight_decay)
-        # self.optimizer_D_B = torch.optim.Adam(self.D_B.parameters(),  lr= args.D_lr , betas=(0.5, 0.999), weight_decay=args.D_weight_decay)
+        self.optimizer_D_A = torch.optim.Adam(self.D_A.parameters(),  lr= args.D_lr , betas=(0.5, 0.999), weight_decay=args.D_weight_decay)
+        self.optimizer_D_B = torch.optim.Adam(self.D_B.parameters(),  lr= args.D_lr , betas=(0.5, 0.999), weight_decay=args.D_weight_decay)
     
     def forward(self):#TODO: prefix + gumblesoftmax
         self.fake_B,self.fake_B_attn = self.G_AB.gumble_generate(self.real_A,self.real_A_attn)  # G_A(A)
