@@ -51,7 +51,7 @@ if(True):
 
     parser.add_argument('--epochs', type=int,                       default=50,     help='num of training epochs')
 
-    parser.add_argument('--G_lr', type=float,                       default=0.00001,   help='learning rate for G')
+    parser.add_argument('--G_lr', type=float,                       default=0.001,   help='learning rate for G')
     parser.add_argument('--G_weight_decay', type=float,             default=1e-3,   help='learning de for G')
     parser.add_argument('--D_lr', type=float,                       default=0.00001,   help='learning rate for D')
     parser.add_argument('--D_weight_decay', type=float,             default=1e-3,   help='learning de for D')
@@ -63,10 +63,10 @@ if(True):
 
 
     parser.add_argument('--load_D', type=int,                       default=0,      help='load pretrained D')
-    parser.add_argument('--valid_begin', type=int,                  default=1,      help='whether valid before train')
+    parser.add_argument('--valid_begin', type=int,                  default=0,      help='whether valid before train')
     parser.add_argument('--train_G', type=int,                      default=1,      help='whether valid before train')
     parser.add_argument('--train_D', type=int,                      default=1,      help='whether valid before train')
-    parser.add_argument('--D_pretrain_iter', type=int,              default=100,      help='whether valid before train')
+    parser.add_argument('--D_pretrain_iter', type=int,              default=0,      help='whether valid before train')
 
 
     args = parser.parse_args()#(args=['--batch_size', '8',  '--no_cuda'])#used in ipynb
