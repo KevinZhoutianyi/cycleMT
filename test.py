@@ -15,6 +15,8 @@ def my_test(loader,model,tokenizer,logging,wandb):
     GBA_metric_sacrebleu =  load_metric('sacrebleu')
     GAB = model.G_AB
     GBA = model.G_BA
+    DA = model.D_A
+    DB = model.D_B
     GAB.eval()
     GBA.eval()
     for step,batch in enumerate(loader):
@@ -34,6 +36,8 @@ def my_test(loader,model,tokenizer,logging,wandb):
         a_generate = GAB.test_generate(a)
         b_generate  = GBA.test_generate(b)
 
+
+
         a_label_decoded = tokenizer.batch_decode(a,skip_special_tokens=True)
         b_label_decoded =  tokenizer.batch_decode(b,skip_special_tokens=True)
         a_pred_decoded = tokenizer.batch_decode(a_generate,skip_special_tokens=True)
@@ -49,6 +53,15 @@ def my_test(loader,model,tokenizer,logging,wandb):
         GBA_metric_sacrebleu.add_batch(predictions=b_pred_str, references=a_label_str)
 
         if  step%100==0:
+            a_dis  = DA(a)
+            b_dis  = DB(b)
+            a_pred_dis  = DA(a_generate)
+            b_pred_dis  = DB(a_generate)
+            logging.info(f'DA_a:\t{a_dis.item()}')
+            logging.info(f'DB_pred_dis:\t{b_pred_dis.item()}')
+            logging.info(f'DB_b:\t{b_dis.item()}')
+            logging.info(f'DA_pred_dis:\t{a_pred_dis.item()}')
+
             logging.info(f'GABloss:\t{GAB_loss.item()}')
             logging.info(f'GBAloss:\t{GBA_loss.item()}')
             logging.info(f'a_decoded[:2]:{a_label_decoded[:2]}')

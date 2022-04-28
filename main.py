@@ -44,16 +44,14 @@ if(True):
     parser.add_argument('--D_A_model_name', type=str,               default='t5-small',      help='model_name')
     parser.add_argument('--D_B_model_name', type=str,               default='Onlydrinkwater/T5-small-de-en',      help='model_name')
     parser.add_argument('--exp_name', type=str,                     default='CYCLE!',      help='experiment name')
-    parser.add_argument('--rep_num', type=int,                      default=25,      help='report times for 1 epoch')
     parser.add_argument('--rep_iter', type=int,                     default=100,      help='report times for 1 epoch')
     parser.add_argument('--test_iter', type=int,                    default=500,      help='report times for 1 epoch')
-    parser.add_argument('--test_num', type=int,                     default=4,      help='test times for 1 epoch')
 
     parser.add_argument('--epochs', type=int,                       default=50,     help='num of training epochs')
 
     parser.add_argument('--G_lr', type=float,                       default=0.0001,   help='learning rate for G')
     parser.add_argument('--G_weight_decay', type=float,             default=1e-3,   help='learning de for G')
-    parser.add_argument('--D_lr', type=float,                       default=0.000001,   help='learning rate for D')
+    parser.add_argument('--D_lr', type=float,                       default=0.0001,   help='learning rate for D')
     parser.add_argument('--D_weight_decay', type=float,             default=1e-3,   help='learning de for D')
     parser.add_argument('--lambda_identity', type=float,            default=0.5,   help='')
     parser.add_argument('--lambda_A', type=float,                   default=0,   help='')

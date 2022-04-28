@@ -19,7 +19,7 @@ def my_train(loader,model,total_iter,args,logging,valid_loader,tokenizer,wandb):
         if(total_iter[0]<args.D_pretrain_iter):
             model.optimize_parameters(trainD=True,trainG=False)
         else:
-            model.optimize_parameters(trainD=True,trainG=True)
+            model.optimize_parameters(trainD=False,trainG=True)
 
 
         if(total_iter[0]%args.rep_iter == 0):
