@@ -20,12 +20,19 @@ def my_train(loader,model,total_iter,args,logging,valid_loader,tokenizer,wandb):
             model.optimize_parameters(trainD=True,trainG=False)
         else:
             model.optimize_parameters(trainD=True,trainG=True)
-        if(total_iter[0]%args.rep_iter == 0 and total_iter[0]>args.D_pretrain_iter):
+
+
+        if(total_iter[0]%args.rep_iter == 0):
+            if(total_iter[0]>args.D_pretrain_iter):
+                loss_dict = model.getLoss(withG=False)
+            else:
+                loss_dict = model.getLoss(withG=True)
+            logging.info(loss_dict)
+            logging.info(f"{step/len(loader)*100}%")
+            wandb.log(loss_dict)
+
+
+        if(total_iter[0]%args.test_iter == 0 and total_iter[0]>args.D_pretrain_iter):
             torch.save(model.D_A,'./checkpoint/D_A.pt')
             torch.save(model.D_B,'./checkpoint/D_B.pt')
-            loss_dict = model.getLoss()
-            logging.info(loss_dict)
-            logging.info(f"\t\t{step/len(loader)*100}%")
-            wandb.log(loss_dict)
-        if(total_iter[0]%args.test_iter == 0 and total_iter[0]>args.D_pretrain_iter):
             my_test(valid_loader,model,tokenizer,logging,wandb)

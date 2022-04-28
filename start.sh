@@ -10,9 +10,9 @@ mkdir model
 mkdir checkpoint
 rm -f ./log/*.txt
 rm -f ./tensorboard/*
-python main.py --train_num_points 10000 \
-    --valid_num_points 1000 --test_iter 2500 \
-    --rep_iter 500 --batch_size 32 \
+python main.py --train_num_points 50000 \
+    --valid_num_points 1000 --test_iter 10000 \
+    --rep_iter 1000 --batch_size 40 \
     --exp_name adaandadam --D_pretrain_iter 5000 --lambda_once 1 --lambda_B 1 --lambda_A 1\
     --load_D 0 --valid_begin 1
 
