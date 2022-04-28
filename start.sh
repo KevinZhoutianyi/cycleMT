@@ -12,7 +12,7 @@ rm -f ./log/*.txt
 rm -f ./tensorboard/*
 python main.py --train_num_points 10000 \
     --valid_num_points 1000 --test_iter 2500 \
-    --rep_iter 500 --batch_size 36 \
+    --rep_iter 500 --batch_size 24 \
     --exp_name nocyclelosstrainDthenTrainG --D_pretrain_iter 5000 --lambda_once 1 --lambda_B 0 --lambda_A 0\
     --load_D 0
 
