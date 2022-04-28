@@ -122,5 +122,7 @@ class G(nn.Module):
         return output_ids
     def forward(self, input_ids, input_attn, target_ids = None, target_attn = None):
         inp_emb = self.embedding(input_ids)
+        target_ids_ = target_ids.copy()
+        target_ids_[target_ids_ == 0] = -100
         out = self.model(inputs_embeds = inp_emb, attention_mask = input_attn, labels = target_ids, decoder_attention_mask = target_attn, return_dict=True)
         return out
