@@ -23,7 +23,7 @@ def my_train(loader,model,total_iter,args,logging,valid_loader,tokenizer,wandb):
 
 
         if(total_iter[0]%args.rep_iter == 0):
-            if(total_iter[0]>args.D_pretrain_iter):
+            if(total_iter[0]<args.D_pretrain_iter):
                 loss_dict = model.getLoss(withG=False)
             else:
                 loss_dict = model.getLoss(withG=True)
