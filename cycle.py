@@ -13,8 +13,13 @@ class CycleGAN():
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.G_AB = G(args=args,pretrained=GAB,name="G_AB",tokenizer=tokenizer,prefix='translate English to Portuguese: ').to(self.device)
         self.G_BA = G(args=args,pretrained=GBA,name="G_BA",tokenizer=tokenizer,prefix='translate Portuguese to English: ').to(self.device)
-        self.D_A = D(args=args,pretrained=DA,name="D_A").to(self.device)
-        self.D_B = D(args=args,pretrained=DB,name="D_B").to(self.device)
+        if(args.load_D == 1):
+            print("D_A and D_B are loaded")
+            self.D_A = torch.load('./model/D_A.pt')
+            self.D_B = torch.load('./model/D_B.pt')
+        else:
+            self.D_A = D(args=args,pretrained=DA,name="D_A").to(self.device)
+            self.D_B = D(args=args,pretrained=DB,name="D_B").to(self.device)
         self.tokenizer = tokenizer
         self.args = args
         self.bs = args.batch_size
@@ -31,10 +36,12 @@ class CycleGAN():
         self.criterionIdt = torch.nn.CrossEntropyLoss( )
         # self.optimizer_G_AB = Adafactor(self.G_AB.parameters(), lr = args.G_lr ,scale_parameter=False, relative_step=False , warmup_init=False,clip_threshold=1,beta1=0,eps=( 1e-30,0.001))
         # self.optimizer_G_BA = Adafactor(self.G_BA.parameters(), lr = args.G_lr ,scale_parameter=False, relative_step=False , warmup_init=False,clip_threshold=1,beta1=0,eps=( 1e-30,0.001))
-        self.optimizer_D_A = Adafactor(self.D_A.parameters(), lr = args.D_lr ,scale_parameter=False, relative_step=False , warmup_init=False,clip_threshold=1,beta1=0,eps=( 1e-30,0.001))
-        self.optimizer_D_B = Adafactor(self.D_B.parameters(), lr = args.D_lr ,scale_parameter=False, relative_step=False , warmup_init=False,clip_threshold=1,beta1=0,eps=( 1e-30,0.001))
+        # self.optimizer_D_A = Adafactor(self.D_A.parameters(), lr = args.D_lr ,scale_parameter=False, relative_step=False , warmup_init=False,clip_threshold=1,beta1=0,eps=( 1e-30,0.001))
+        # self.optimizer_D_B = Adafactor(self.D_B.parameters(), lr = args.D_lr ,scale_parameter=False, relative_step=False , warmup_init=False,clip_threshold=1,beta1=0,eps=( 1e-30,0.001))
         self.optimizer_G_AB = torch.optim.Adam(self.G_AB.parameters(),  lr= args.G_lr , betas=(0.5, 0.999), weight_decay=args.G_weight_decay)
         self.optimizer_G_BA = torch.optim.Adam(self.G_BA.parameters(),  lr= args.G_lr , betas=(0.5, 0.999), weight_decay=args.G_weight_decay)
+        self.optimizer_D_A = torch.optim.Adam(self.D_A.parameters(),  lr= args.D_lr , betas=(0.5, 0.999), weight_decay=args.D_weight_decay)
+        self.optimizer_D_B = torch.optim.Adam(self.D_B.parameters(),  lr= args.D_lr , betas=(0.5, 0.999), weight_decay=args.D_weight_decay)
     
     def forward(self):#TODO: prefix + gumblesoftmax
         self.fake_B,self.fake_B_attn = self.G_AB.gumble_generate(self.real_A,self.real_A_attn)  # G_A(A)

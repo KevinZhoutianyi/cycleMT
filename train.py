@@ -6,6 +6,7 @@ import torch.backends.cudnn as cudnn
 from torch.autograd import Variable
 from test import *
 def my_train(loader,model,total_iter,args,logging,valid_loader,tokenizer,wandb):
+    logging.info(f"total iter:{total_iter}")
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.trainmode()
     for step,batch in enumerate(loader):
