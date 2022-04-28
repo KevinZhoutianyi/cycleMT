@@ -43,7 +43,9 @@ class D(nn.Module):
         self.args = args
         self.encoder = pretrained.get_encoder()
         self.embedding = Embedding_(self.encoder.embed_tokens).requires_grad_()
+        self.dropout = nn.Dropout(0.1)
         self.classifier = torch.nn.Linear(in_features=512, out_features=1, bias=True)
+        self.relu = nn.ReLU()
         
     def set_require_grad(self,require):
         for param in self.encoder.parameters():
@@ -55,7 +57,9 @@ class D(nn.Module):
         x_emb = self.embedding(x)
         distr = self.encoder(inputs_embeds=x_emb).last_hidden_state
         distr = torch.mean(distr,1).squeeze()
+        distr = self.dropout(distr)
         ret =  self.classifier(distr)
+        ret = self.relu(ret)
         # print(self.name,"D_ret",ret)
         return ret
 
