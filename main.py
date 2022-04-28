@@ -32,8 +32,8 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 if(True):
     parser = argparse.ArgumentParser("main")
 
-    parser.add_argument('--valid_num_points', type=int,             default = 200, help='validation data number')
-    parser.add_argument('--train_num_points', type=int,             default = 1000, help='train data number')
+    parser.add_argument('--valid_num_points', type=int,             default = 100, help='validation data number')
+    parser.add_argument('--train_num_points', type=int,             default = 500, help='train data number')
 
     parser.add_argument('--batch_size', type=int,                   default=3,     help='Batch size')
     parser.add_argument('--max_length', type=int,                   default=512,     help='max_length')
@@ -51,15 +51,18 @@ if(True):
 
     parser.add_argument('--epochs', type=int,                       default=50,     help='num of training epochs')
 
-    parser.add_argument('--G_lr', type=float,                       default=1e-6,   help='learning rate for G')
-    parser.add_argument('--D_lr', type=float,                       default=1e-6,   help='learning rate for D')
+    parser.add_argument('--G_lr', type=float,                       default=0.00001,   help='learning rate for G')
+    parser.add_argument('--G_weight_decay', type=float,             default=1e-3,   help='learning de for G')
+    parser.add_argument('--D_lr', type=float,                       default=0.00001,   help='learning rate for D')
+    parser.add_argument('--D_weight_decay', type=float,             default=1e-3,   help='learning de for D')
     parser.add_argument('--lambda_identity', type=float,            default=0.5,   help='')
-    parser.add_argument('--lambda_A', type=float,                   default=0.01,   help='')
-    parser.add_argument('--lambda_B', type=float,                   default=0.01,   help='')
+    parser.add_argument('--lambda_A', type=float,                   default=0,   help='')
+    parser.add_argument('--lambda_B', type=float,                   default=0,   help='')
     parser.add_argument('--lambda_once', type=float,                default=1,   help='')
     parser.add_argument('--smoothing', type=float,                  default=0.1,    help='labelsmoothing')
 
 
+    parser.add_argument('--load_D', type=int,                       default=0,      help='load pretrained D')
     parser.add_argument('--valid_begin', type=int,                  default=1,      help='whether valid before train')
     parser.add_argument('--train_G', type=int,                      default=1,      help='whether valid before train')
     parser.add_argument('--train_D', type=int,                      default=1,      help='whether valid before train')
@@ -116,7 +119,7 @@ train_data = get_Dataset_chaos(train, tokenizer,max_length=args.max_length)
 train_dataloader = DataLoader(train_data, sampler= RandomSampler(train_data), 
                         batch_size=args.batch_size, pin_memory=True, num_workers=2)
 valid_data = get_Dataset(valid, tokenizer,max_length=args.max_length)
-valid_dataloader = DataLoader(valid_data, sampler=RandomSampler(valid_data), 
+valid_dataloader = DataLoader(valid_data, sampler=SequentialSampler(valid_data), 
                         batch_size=args.batch_size, pin_memory=True, num_workers=2)
 
 # %%
@@ -125,7 +128,7 @@ cycleGAN = CycleGAN(args,GABpretrained,GBApretrained,DApretrained,DBpretrained,t
 # %%
 if(args.valid_begin==1):
     my_test(valid_dataloader,cycleGAN,tokenizer,logging,wandb)
-total_iter = 0    
+total_iter = [0]  
 for epoch in range(args.epochs):
 
     logging.info(f"\n\n  ----------------epoch:{epoch}----------------")
