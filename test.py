@@ -57,9 +57,9 @@ def my_test(loader,model,tokenizer,logging,wandb):
             b_dis  = DB(b)
             a_pred_dis  = DA(a_generate)
             b_pred_dis  = DB(a_generate)
-            logging.info(f'DA_a:\t{a_dis.item()}')
+            logging.info(f'DA_a:\t{a_dis}')
             logging.info(f'DB_pred_dis:\t{b_pred_dis}')
-            logging.info(f'DB_b:\t{b_dis.item()}')
+            logging.info(f'DB_b:\t{b_dis}')
             logging.info(f'DA_pred_dis:\t{a_pred_dis}')
 
             logging.info(f'GABloss:\t{GAB_loss.item()}')
