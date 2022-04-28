@@ -89,7 +89,7 @@ class G(nn.Module):
         if(len(x.shape)==3):
             x = torch.argmax(x,-1)#change logit to index if needed
         # print(self.name,'x',x)
-        generate_id = self.model.generate(x,num_beams=1)[:,1:].contiguous()#get rid of start padding
+        generate_id = self.model.generate(x,num_beams=2)[:,1:].contiguous()#get rid of start padding
         # print(self.name,'generate_id',generate_id)
         att = (generate_id>0.5).long()
         x_emb = self.embedding(x_)
