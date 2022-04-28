@@ -53,7 +53,7 @@ if(True):
 
     parser.add_argument('--G_lr', type=float,                       default=0.0001,   help='learning rate for G')
     parser.add_argument('--G_weight_decay', type=float,             default=1e-3,   help='learning de for G')
-    parser.add_argument('--D_lr', type=float,                       default=0.00001,   help='learning rate for D')
+    parser.add_argument('--D_lr', type=float,                       default=0.000001,   help='learning rate for D')
     parser.add_argument('--D_weight_decay', type=float,             default=1e-3,   help='learning de for D')
     parser.add_argument('--lambda_identity', type=float,            default=0.5,   help='')
     parser.add_argument('--lambda_A', type=float,                   default=0,   help='')
