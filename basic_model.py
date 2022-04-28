@@ -51,10 +51,12 @@ class D(nn.Module):
         self.embedding.requires_grad_ = require
         self.classifier.requires_grad_ = require
     def forward(self,x):
+        # print(self.name,'D_input',torch.argmax(x,-1))
         x_emb = self.embedding(x)
         distr = self.encoder(inputs_embeds=x_emb).last_hidden_state
         distr = torch.mean(distr,1).squeeze()
         ret =  self.classifier(distr)
+        # print(self.name,"D_ret",ret)
         return ret
 
 class G(nn.Module):
@@ -68,6 +70,7 @@ class G(nn.Module):
         self.tokenzied_prefix_attn.require_grad = False
         self.args = args
         self.model = pretrained
+        self.softmax = torch.nn.Softmax(dim=-1)
         self.encoder = self.model.get_encoder()
         self.embedding = Embedding_(self.encoder.embed_tokens).requires_grad_()
     def set_require_grad(self,require):
@@ -76,22 +79,27 @@ class G(nn.Module):
             p.requires_grad = require
     def gumble_generate(self,x,x_attn):
         '''
-        input is (batchsize,sentencelength)
+        input is (batchsize,sentencelength) without prefix and start padding
         1. add prefix
         2. gumble trick
         3. return the generated one_hot output(batchsize,sentencelength,vocabsize)
         '''
-        x,x_attn = self.add_prefix(x,x_attn)
-        x_ = x
+        x,x_attn = self.add_prefix(x,x_attn)#add translate a to b:
+        x_ = x#made copy
         if(len(x.shape)==3):
-            x = torch.argmax(x,-1)
-        generate_id = self.model.generate(x,num_beams=1)
+            x = torch.argmax(x,-1)#change logit to index if needed
+        # print(self.name,'x',x)
+        generate_id = self.model.generate(x,num_beams=1)[:,1:].contiguous()#get rid of start padding
+        # print(self.name,'generate_id',generate_id)
         att = (generate_id>0.5).long()
         x_emb = self.embedding(x_)
         distr = self.model(inputs_embeds=x_emb, attention_mask=x_attn, labels = generate_id, decoder_attention_mask = torch.ones_like(generate_id,requires_grad=False).long()).logits
-        one_hot = torch.zeros(generate_id.shape[0], generate_id.shape[1],distr.shape[-1], device=torch.device('cuda:0'),requires_grad=False)
-        one_hot_output = one_hot.scatter_(-1, generate_id.unsqueeze(-1), 1.).float().detach() + distr - distr.detach()
-        return one_hot_output,att
+        distr_softmax = self.softmax(distr)
+        # print(self.name,'distr arg',torch.argmax(distr,-1))
+        one_hot = torch.zeros(generate_id.shape[0], generate_id.shape[1],distr_softmax.shape[-1], device=torch.device('cuda:0'),requires_grad=False)
+        one_hot_output = one_hot.scatter_(-1, generate_id.unsqueeze(-1), 1.).float().detach() + distr_softmax - distr_softmax.detach()
+        # print(self.name,'one_hot_output',torch.argmax(one_hot_output,-1))
+        return one_hot_output,att# not start with padding
     def add_prefix(self,x,x_attn):
         prefix = self.tokenzied_prefix.repeat(x.shape[0],1).cuda()
         if(len(x.shape)==2):
