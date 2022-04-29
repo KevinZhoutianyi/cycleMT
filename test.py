@@ -33,8 +33,8 @@ def my_test(loader,model,tokenizer,logging,wandb):
         GBA_acc+= GBA_loss.item()
         counter+= 1
 
-        a_generate = GAB.test_generate(a)
-        b_generate  = GBA.test_generate(b)
+        a_generate = GAB.test_generate(a)[:,1:].contiguous()
+        b_generate  = GBA.test_generate(b)[:,1:].contiguous()
 
 
 
@@ -59,8 +59,12 @@ def my_test(loader,model,tokenizer,logging,wandb):
             b_dis  = DB(b,b_attn)
             logging.info(f"b{b}")
             logging.info(f"b_attn{b_attn}")
-            a_pred_dis  = DA(a_generate,torch.ones_like(a_generate))
-            b_pred_dis  = DB(b_generate,torch.ones_like(b_generate))
+            a_pred_dis  = DA(a_generate,(a_generate>0.5).long())
+            logging.info(f"a_generate{a_generate}")
+            logging.info(f"(a_generate>0.5).long()){(a_generate>0.5).long()}")
+            b_pred_dis  = DB(b_generate,(b_generate>0.5).long())
+            logging.info(f"b_generate{b_generate}")
+            logging.info(f"(b_generate>0.5).long(){(b_generate>0.5).long()}")
             logging.info("DA_a_: {}".format(''.join(map(lambda x: str(x.item())[:5]+',  ', a_dis))))
             logging.info("DB_pred_dis: {}".format(''.join(map(lambda x:  str(x.item())[:5]+',  ', b_pred_dis))))
             logging.info("DB_b: {}".format(''.join(map(lambda x:  str(x.item())[:5]+',  ', b_dis))))

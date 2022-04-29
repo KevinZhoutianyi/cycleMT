@@ -178,13 +178,13 @@ class CycleGAN():
     def backward_D_A(self):
         """Calculate GAN loss for discriminator D_A"""
         fake_B = self.fake_B_pool.query(self.fake_B)
-        self.loss_D_A = self.backward_D_basic(self.D_A, self.real_B, self.real_B_attn, fake_B,torch.ones(fake_B.shape[:2],device=self.device,requires_grad=False))
+        self.loss_D_A = self.backward_D_basic(self.D_A, self.real_B, self.real_B_attn, fake_B, (fake_B[:, :,0] != 1).long())
         self.DA_meter.update(self.loss_D_A.item(),self.bs)
 
     def backward_D_B(self):
         """Calculate GAN loss for discriminator D_B"""
         fake_A = self.fake_A_pool.query(self.fake_A)#TODO:make leak here!
-        self.loss_D_B = self.backward_D_basic(self.D_B, self.real_A,self.real_A_attn,  fake_A,torch.ones(fake_A.shape[:2],device=self.device,requires_grad=False))
+        self.loss_D_B = self.backward_D_basic(self.D_B, self.real_A,self.real_A_attn,  fake_A,(fake_A[:, :,0] != 1).long())
 
         self.DB_meter.update(self.loss_D_B.item(),self.bs)
 
