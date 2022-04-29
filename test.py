@@ -19,6 +19,8 @@ def my_test(loader,model,tokenizer,logging,wandb):
     DB = model.D_B
     GAB.eval()
     GBA.eval()
+    DA.eval()
+    DB.eval()
     for step,batch in enumerate(loader):
         a = Variable(batch[0], requires_grad=False).to(device, non_blocking=False)#en
         a_attn = Variable(batch[1], requires_grad=False).to(device, non_blocking=False)
@@ -53,18 +55,18 @@ def my_test(loader,model,tokenizer,logging,wandb):
         GBA_metric_sacrebleu.add_batch(predictions=b_pred_str, references=a_label_str)
 
         if  step%100==0:
-            a_dis  = DA(a,a_attn)
             logging.info(f"a{a}")
             logging.info(f"a_attn{a_attn}")
-            b_dis  = DB(b,b_attn)
+            a_dis  = DA(a,a_attn)
             logging.info(f"b{b}")
             logging.info(f"b_attn{b_attn}")
-            a_pred_dis  = DA(a_generate,(a_generate>0.5).long())
+            b_dis  = DB(b,b_attn)
             logging.info(f"a_generate{a_generate}")
             logging.info(f"(a_generate>0.5).long()){(a_generate>0.5).long()}")
-            b_pred_dis  = DB(b_generate,(b_generate>0.5).long())
+            a_pred_dis  = DA(a_generate,(a_generate>0.5).long())
             logging.info(f"b_generate{b_generate}")
             logging.info(f"(b_generate>0.5).long(){(b_generate>0.5).long()}")
+            b_pred_dis  = DB(b_generate,(b_generate>0.5).long())
             logging.info("DA_a_: {}".format(''.join(map(lambda x: str(x.item())[:5]+',  ', a_dis))))
             logging.info("DB_pred_dis: {}".format(''.join(map(lambda x:  str(x.item())[:5]+',  ', b_pred_dis))))
             logging.info("DB_b: {}".format(''.join(map(lambda x:  str(x.item())[:5]+',  ', b_dis))))
