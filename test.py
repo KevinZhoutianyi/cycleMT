@@ -53,10 +53,10 @@ def my_test(loader,model,tokenizer,logging,wandb):
         GBA_metric_sacrebleu.add_batch(predictions=b_pred_str, references=a_label_str)
 
         if  step%100==0:
-            a_dis  = DA(a)
-            b_dis  = DB(b)
-            a_pred_dis  = DA(a_generate)
-            b_pred_dis  = DB(a_generate)
+            a_dis  = DA(a,a_attn)
+            b_dis  = DB(b,b_attn)
+            a_pred_dis  = DA(a_generate,torch.ones_like(a_generate))
+            b_pred_dis  = DB(b_generate,torch.ones_like(b_generate))
             logging.info("DA_a_: {}".format(''.join(map(lambda x: str(x.item())[:5]+',  ', a_dis))))
             logging.info("DB_pred_dis: {}".format(''.join(map(lambda x:  str(x.item())[:5]+',  ', b_pred_dis))))
             logging.info("DB_b: {}".format(''.join(map(lambda x:  str(x.item())[:5]+',  ', b_dis))))

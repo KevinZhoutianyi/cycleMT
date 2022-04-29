@@ -36,7 +36,7 @@ if(True):
     parser.add_argument('--train_num_points', type=int,             default = 500, help='train data number')
 
     parser.add_argument('--batch_size', type=int,                   default=3,     help='Batch size')
-    parser.add_argument('--max_length', type=int,                   default=512,     help='max_length')
+    parser.add_argument('--max_length', type=int,                   default=128,     help='max_length')
 
     parser.add_argument('--gpu', type=int,                          default=0,      help='gpu device id')
     parser.add_argument('--G_AB_model_name', type=str,              default='t5-small',      help='model_name')
@@ -49,7 +49,7 @@ if(True):
 
     parser.add_argument('--epochs', type=int,                       default=50,     help='num of training epochs')
 
-    parser.add_argument('--G_lr', type=float,                       default=0.0001,   help='learning rate for G')
+    parser.add_argument('--G_lr', type=float,                       default=0.00001,   help='learning rate for G')
     parser.add_argument('--G_weight_decay', type=float,             default=1e-3,   help='learning de for G')
     parser.add_argument('--D_lr', type=float,                       default=0.0001,   help='learning rate for D')
     parser.add_argument('--D_weight_decay', type=float,             default=1e-3,   help='learning de for D')
@@ -64,10 +64,11 @@ if(True):
     parser.add_argument('--valid_begin', type=int,                  default=0,      help='whether valid before train')
     parser.add_argument('--train_G', type=int,                      default=1,      help='whether valid before train')
     parser.add_argument('--train_D', type=int,                      default=1,      help='whether valid before train')
-    parser.add_argument('--D_pretrain_iter', type=int,              default=0,      help='whether valid before train')
+    parser.add_argument('--D_pretrain_iter', type=int,              default=400,      help='whether valid before train')
 
 
     args = parser.parse_args()#(args=['--batch_size', '8',  '--no_cuda'])#used in ipynb
+    
     args.test_iter = args.test_iter//args.batch_size * args.batch_size
     args.rep_iter = args.rep_iter//args.batch_size * args.batch_size
     print('args.test_iter',args.test_iter)
@@ -131,8 +132,6 @@ for epoch in range(args.epochs):
 
     logging.info(f"\n\n  ----------------epoch:{epoch}----------------")
     my_train(train_dataloader,cycleGAN,total_iter,args,logging,valid_dataloader,tokenizer,wandb)
-    # my_test(valid_dataloader,cycleGAN,tokenizer,logging,wandb)
-    #TODO:cycgan.savemodel
 
 
 

@@ -120,9 +120,9 @@ class CycleGAN():
 
         # GAN loss D_A(G_A(A))
 
-        self.loss_G_A = self.criterionGAN(self.D_A(self.fake_B), torch.ones((self.fake_B.shape[0],1),device=self.device))*lambda_once
+        self.loss_G_A = self.criterionGAN(self.D_A(self.fake_B,self.fake_B_attn), torch.ones((self.fake_B.shape[0],1),device=self.device))*lambda_once
         # GAN loss D_B(G_B(B))
-        self.loss_G_B = self.criterionGAN(self.D_B(self.fake_A), torch.ones((self.fake_A.shape[0],1),device=self.device))*lambda_once
+        self.loss_G_B = self.criterionGAN(self.D_B(self.fake_A,self.fake_A_attn), torch.ones((self.fake_A.shape[0],1),device=self.device))*lambda_once
 
 
         # Forward cycle loss || G_B(G_A(A)) - A||
@@ -153,7 +153,7 @@ class CycleGAN():
         
 
 
-    def backward_D_basic(self, D, real, fake):
+    def backward_D_basic(self, D, real,real_attn, fake,fake_attn):
         """Calculate GAN loss for the discriminator
         Parameters:
             netD (network)      -- the discriminator D
@@ -163,12 +163,10 @@ class CycleGAN():
         We also call loss_D.backward() to calculate the gradients.
         """
         # Real
-        print(real)
-        pred_real = D(real)
+        pred_real = D(real,real_attn)
         loss_D_real = self.criterionGAN(pred_real, torch.ones((pred_real.shape[0],1),device=self.device,requires_grad=False))
         # Fake
-        print(torch.argmax(fake,-1))
-        pred_fake = D(fake.detach())
+        pred_fake = D(fake.detach(),fake_attn)
         loss_D_fake = self.criterionGAN(pred_fake, torch.zeros((pred_fake.shape[0],1),device=self.device,requires_grad=False))
         # Combined loss and calculate gradients
         loss_D = (loss_D_real + loss_D_fake) * 0.5
@@ -178,13 +176,13 @@ class CycleGAN():
     def backward_D_A(self):
         """Calculate GAN loss for discriminator D_A"""
         fake_B = self.fake_B_pool.query(self.fake_B)
-        self.loss_D_A = self.backward_D_basic(self.D_A, self.real_B, fake_B)
+        self.loss_D_A = self.backward_D_basic(self.D_A, self.real_B, self.real_B_attn, fake_B,torch.ones(fake_B.shape[:2],device=self.device,requires_grad=False))
         self.DA_meter.update(self.loss_D_A.item(),self.bs)
 
     def backward_D_B(self):
         """Calculate GAN loss for discriminator D_B"""
         fake_A = self.fake_A_pool.query(self.fake_A)#TODO:make leak here!
-        self.loss_D_B = self.backward_D_basic(self.D_B, self.real_A, fake_A)
+        self.loss_D_B = self.backward_D_basic(self.D_B, self.real_A,self.real_A_attn,  fake_A,torch.ones(fake_A.shape[:2],device=self.device,requires_grad=False))
 
         self.DB_meter.update(self.loss_D_B.item(),self.bs)
 

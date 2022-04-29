@@ -52,14 +52,25 @@ class D(nn.Module):
             param.requires_grad = require
         self.embedding.requires_grad_ = require
         self.classifier.requires_grad_ = require
-    def forward(self,x):
+    def forward(self,x,x_attn):
         # print(self.name,'D_input',torch.argmax(x,-1))
+        #print("-------D-------")
+        #print('x.shape',x.shape)
         x_emb = self.embedding(x)#
+        #print('x_emb.shape',x_emb.shape)
         distr = self.encoder(inputs_embeds=x_emb).last_hidden_state#(bs,sentence length,512)
-        distr = distr[:,0,:].squeeze()#(bs,512)
+        #print('distr.shape',distr.shape)
+        x_attn= x_attn.unsqueeze(-1)
+        #print('x_attn.shape',x_attn.shape)
+        distr = torch.mul(distr,x_attn)#previously,even the word is 0, their will be some value in the context vector, the model will make them large to classifier.
+        #print('distr.shape',distr.shape)
+        distr = torch.mean(distr,1).squeeze()#(bs,512)
+        #print('distr.shape',distr.shape)
         distr = self.dropout(distr)#(bs,512)
         ret =  self.classifier(distr)#(bs,1)
         ret = self.relu(ret)#(bs,1)
+        #print('ret.shape',ret.shape)
+        #print("-------D end-------")
         return ret
 
 class G(nn.Module):
@@ -80,6 +91,8 @@ class G(nn.Module):
         self.embedding.requires_grad_ = require
         for p in self.model.parameters():
             p.requires_grad = require
+
+            
     def gumble_generate(self,x,x_attn):
         '''
         input is (batchsize,sentencelength) without prefix and start padding
@@ -91,18 +104,18 @@ class G(nn.Module):
         x_ = x#made copy
         if(len(x.shape)==3):
             x = torch.argmax(x,-1)#change logit to index if needed
-        # print(self.name,'x',x)
         generate_id = self.model.generate(x,num_beams=2)[:,1:].contiguous()#get rid of start padding
-        # print(self.name,'generate_id',generate_id)
         att = (generate_id>0.5).long()
         x_emb = self.embedding(x_)
         distr = self.model(inputs_embeds=x_emb, attention_mask=x_attn, labels = generate_id, decoder_attention_mask = torch.ones_like(generate_id,requires_grad=False).long()).logits
         distr_softmax = self.softmax(distr)
-        # print(self.name,'distr arg',torch.argmax(distr,-1))
         one_hot = torch.zeros(generate_id.shape[0], generate_id.shape[1],distr_softmax.shape[-1], device=torch.device('cuda:0'),requires_grad=False)
         one_hot_output = one_hot.scatter_(-1, generate_id.unsqueeze(-1), 1.).float().detach() + distr_softmax - distr_softmax.detach()
-        # print(self.name,'one_hot_output',torch.argmax(one_hot_output,-1))
         return one_hot_output,att# not start with padding
+
+
+
+
     def add_prefix(self,x,x_attn):
         prefix = self.tokenzied_prefix.repeat(x.shape[0],1).cuda()
         if(len(x.shape)==2):
