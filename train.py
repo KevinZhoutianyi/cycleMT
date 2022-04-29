@@ -33,6 +33,8 @@ def my_train(loader,model,total_iter,args,logging,valid_loader,tokenizer,wandb):
 
 
         if(total_iter[0]%args.test_iter == 0 and total_iter[0]>args.D_pretrain_iter):
+            model.scheduler_D_A.step()
+            model.scheduler_D_B.step()
             torch.save(model.D_A,'./checkpoint/D_A.pt')
             torch.save(model.D_B,'./checkpoint/D_B.pt')
             my_test(valid_loader,model,tokenizer,logging,wandb)

@@ -23,7 +23,7 @@ def seed_torch(seed=0):
 
 class Pool():
 
-    def __init__(self, pool_size=50):
+    def __init__(self, pool_size=10):
         self.pool_size = pool_size
         if self.pool_size > 0:  # create an empty pool
             self.num = 0

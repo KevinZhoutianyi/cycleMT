@@ -54,7 +54,11 @@ def my_test(loader,model,tokenizer,logging,wandb):
 
         if  step%100==0:
             a_dis  = DA(a,a_attn)
+            logging.info(f"a{a}")
+            logging.info(f"a_attn{a_attn}")
             b_dis  = DB(b,b_attn)
+            logging.info(f"b{b}")
+            logging.info(f"b_attn{b_attn}")
             a_pred_dis  = DA(a_generate,torch.ones_like(a_generate))
             b_pred_dis  = DB(b_generate,torch.ones_like(b_generate))
             logging.info("DA_a_: {}".format(''.join(map(lambda x: str(x.item())[:5]+',  ', a_dis))))
