@@ -57,7 +57,7 @@ class D(nn.Module):
         distr = self.encoder(inputs_embeds=x_emb,attention_mask=x_attn).last_hidden_state
         x_attn= x_attn.unsqueeze(-1)
         distr = torch.mul(distr,x_attn)#previously,even the word is 0, their will be some value in the context vector, the model will make them large to classifier.
-        distr = distr[:,0,:]
+        distr = torch.sum(distr,1)/torch.sum(x_attn,1)
         ret =  self.classifier(distr)#(bs,1)
         ret = self.relu(ret)#(bs,1)
         return ret
@@ -127,7 +127,5 @@ class G(nn.Module):
         return output_ids
     def forward(self, input_ids, input_attn, target_ids = None, target_attn = None):
         inp_emb = self.embedding(input_ids)
-        target_ids_ = target_ids.clone()
-        target_ids_[target_ids_ == 0] = -100
         out = self.model(inputs_embeds = inp_emb, attention_mask = input_attn, labels = target_ids, decoder_attention_mask = target_attn, return_dict=True)
         return out
