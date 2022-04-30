@@ -53,16 +53,16 @@ if(True):
     parser.add_argument('--G_weight_decay', type=float,             default=1e-3,   help='learning de for G')
     parser.add_argument('--D_lr', type=float,                       default=0.0001,   help='learning rate for D')
     parser.add_argument('--D_weight_decay', type=float,             default=1e-3,   help='learning de for D')
-    parser.add_argument('--D_gamma', type=float,                    default=0.1,    help='lr*gamma after each test')
+    parser.add_argument('--D_gamma', type=float,                    default=0.9,    help='lr*gamma after each test')
     parser.add_argument('--lambda_identity', type=float,            default=0.5,   help='')
     parser.add_argument('--lambda_A', type=float,                   default=0,   help='')
     parser.add_argument('--lambda_B', type=float,                   default=0,   help='')
     parser.add_argument('--lambda_once', type=float,                default=1,   help='')
     parser.add_argument('--smoothing', type=float,                  default=0.5,    help='labelsmoothing')
 
-
     parser.add_argument('--load_D', type=int,                       default=0,      help='load pretrained D')
-    parser.add_argument('--valid_begin', type=int,                  default=0,      help='whether valid before train')
+    parser.add_argument('--num_workers', type=int,                  default=0,      help='num_workers')
+    parser.add_argument('--valid_begin', type=int,                  default=1,      help='whether valid before train')
     parser.add_argument('--train_G', type=int,                      default=1,      help='whether valid before train')
     parser.add_argument('--train_D', type=int,                      default=1,      help='whether valid before train')
     parser.add_argument('--D_pretrain_iter', type=int,              default=100,      help='whether valid before train')
@@ -116,10 +116,10 @@ valid = dataset['train']['translation'][args.train_num_points:(args.train_num_po
 
 train_data = get_Dataset_chaos(train, tokenizer,max_length=args.max_length)
 train_dataloader = DataLoader(train_data, sampler= RandomSampler(train_data), 
-                        batch_size=args.batch_size, pin_memory=True, num_workers=2)
+                        batch_size=args.batch_size, pin_memory=True, num_workers=args.num_workers)
 valid_data = get_Dataset(valid, tokenizer,max_length=args.max_length)
 valid_dataloader = DataLoader(valid_data, sampler=SequentialSampler(valid_data), 
-                        batch_size=args.batch_size, pin_memory=True, num_workers=2)
+                        batch_size=args.batch_size, pin_memory=True, num_workers=args.num_workers)
 
 # %%
 cycleGAN = CycleGAN(args,GABpretrained,GBApretrained,DApretrained,DBpretrained,tokenizer)

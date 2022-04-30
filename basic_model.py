@@ -53,25 +53,13 @@ class D(nn.Module):
         self.embedding.requires_grad_ = require
         self.classifier.requires_grad_ = require
     def forward(self,x,x_attn):
-        # print(self.name,'D_input',torch.argmax(x,-1))
-        #print("-------D-------")
-        #print('x.shape',x.shape)
-        x_emb = self.embedding(x)#
-        #print('x_emb.shape',x_emb.shape)
-        distr = self.encoder(inputs_embeds=x_emb).last_hidden_state#(bs,sentence length,512)
-        #print('distr.shape',distr.shape)
+        x_emb = self.embedding(x)
+        distr = self.encoder(inputs_embeds=x_emb,attention_mask=x_attn).last_hidden_state
         x_attn= x_attn.unsqueeze(-1)
-        #print('x_attn.shape',x_attn.shape)
         distr = torch.mul(distr,x_attn)#previously,even the word is 0, their will be some value in the context vector, the model will make them large to classifier.
-        # print('distr.shape',distr.shape)
-        # distr = torch.sum(distr,1)/torch.sum(x_attn,1)
         distr = distr[:,0,:]
-        # print('distr.shape',distr.shape)
-        # distr = self.dropout(distr)#(bs,512)
         ret =  self.classifier(distr)#(bs,1)
         ret = self.relu(ret)#(bs,1)
-        # print('ret.shape',ret.shape)
-        #print("-------D end-------")
         return ret
 
 class G(nn.Module):
