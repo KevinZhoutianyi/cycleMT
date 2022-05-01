@@ -64,8 +64,8 @@ def my_test(loader,model,tokenizer,logging,wandb):
             # logging.info(f"b_generate{b_generate}")
             # logging.info(f"(b_generate>0.5).long(){(b_generate>0.5).long()}")
             
-            a_dis  = DA(b,b_attn)
-            b_dis  = DB(a,a_attn)
+            b_dis  = DA(b,b_attn)
+            a_dis  = DB(a,a_attn)
             a_pred_dis  = DA(a_generate,(a_generate>0.5).long())
             b_pred_dis  = DB(b_generate,(b_generate>0.5).long())
             logging.info("DA_a_: {}".format(''.join(map(lambda x: str(x.item())[:5]+',  ', a_dis))))
