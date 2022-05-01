@@ -10,7 +10,7 @@ mkdir model
 mkdir checkpoint
 rm -f ./log/*.txt
 rm -f ./tensorboard/*
-python main.py  --num_workers 2             --batch_size 32                                 \
+python main.py  --num_workers 2             --batch_size 32             --max_length 256    \
                 --train_num_points 50000    --valid_num_points 1000                         \
                 --D_lr 1e-5                 --D_gamma 0.5                                   \
                 --rep_iter 1000             --D_pretrain_iter 5000      --test_iter 10000   \
