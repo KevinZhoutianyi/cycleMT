@@ -43,4 +43,6 @@ def my_train(loader,model,total_iter,args,logging,valid_loader,tokenizer,wandb):
             model.scheduler_G_BA.step()
             torch.save(model.D_A,'./checkpoint/D_A.pt')
             torch.save(model.D_B,'./checkpoint/D_B.pt')
+            torch.save(model.G_AB,'./checkpoint/G_AB.pt')
+            torch.save(model.G_BA,'./checkpoint/G_BA.pt')
             my_test(valid_loader,model,tokenizer,logging,wandb)
