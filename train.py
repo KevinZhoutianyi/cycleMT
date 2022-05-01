@@ -36,7 +36,7 @@ def my_train(loader,model,total_iter,args,logging,valid_loader,tokenizer,wandb):
             wandb.log(loss_dict)
 
 
-        if(total_iter[0]%args.test_iter == 0 and total_iter[0]>args.D_pretrain_iter):
+        if(total_iter[0]%args.test_iter == 0 ):
             model.scheduler_D_A.step()
             model.scheduler_D_B.step()
             model.scheduler_G_AB.step()
