@@ -53,7 +53,7 @@ if(True):
     parser.add_argument('--G_weight_decay', type=float,             default=1e-3,   help='learning de for G')
     parser.add_argument('--G_gamma', type=float,                    default=0.9,    help='lr*gamma after each test')
     parser.add_argument('--G_grad_clip', type=float,                default=1,   help='grad_clip')
-    parser.add_argument('--D_lr', type=float,                       default=1e-6,   help='learning rate for D')
+    parser.add_argument('--D_lr', type=float,                       default=1e-5,   help='learning rate for D')
     parser.add_argument('--D_weight_decay', type=float,             default=1e-3,   help='learning de for D')
     parser.add_argument('--D_gamma', type=float,                    default=0.8,    help='lr*gamma after each test')
     parser.add_argument('--D_grad_clip', type=float,                default=1e-3,   help='grad_clip')
@@ -68,7 +68,7 @@ if(True):
     parser.add_argument('--valid_begin', type=int,                  default=1,      help='whether valid before train')
     parser.add_argument('--train_G', type=int,                      default=1,      help='whether valid before train')
     parser.add_argument('--train_D', type=int,                      default=1,      help='whether valid before train')
-    parser.add_argument('--D_pretrain_iter', type=int,              default=100,      help='whether valid before train')
+    parser.add_argument('--D_pretrain_iter', type=int,              default=5000,      help='whether valid before train')
 
 
     args = parser.parse_args()#(args=['--batch_size', '8',  '--no_cuda'])#used in ipynb
