@@ -15,5 +15,5 @@ python main.py  --num_workers 4             --batch_size 32             --max_le
                 --D_lr 1e-4                 --G_lr 1e-4                 --D_gamma 0.5       \
                 --rep_iter 1000             --D_pretrain_iter 5000      --test_iter 10000   \
                 --lambda_once 1             --lambda_B 0                --lambda_A 0        \
-                --load_D 0                  --valid_begin 1             --train_D 1         \
+                --load_D 0                  --load_G 0                  --valid_begin 1             --train_D 1         \
                 --exp_name  fixgenerate256
