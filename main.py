@@ -49,12 +49,13 @@ if(True):
 
     parser.add_argument('--epochs', type=int,                       default=50,     help='num of training epochs')
 
-    parser.add_argument('--G_lr', type=float,                       default=0.00001,   help='learning rate for G')
+    parser.add_argument('--G_lr', type=float,                       default=1e-5,   help='learning rate for G')
     parser.add_argument('--G_weight_decay', type=float,             default=1e-3,   help='learning de for G')
     parser.add_argument('--G_gamma', type=float,                    default=0.5,    help='lr*gamma after each test')
-    parser.add_argument('--D_lr', type=float,                       default=0.0001,   help='learning rate for D')
+    parser.add_argument('--D_lr', type=float,                       default=1e-5,   help='learning rate for D')
     parser.add_argument('--D_weight_decay', type=float,             default=1e-3,   help='learning de for D')
     parser.add_argument('--D_gamma', type=float,                    default=0.5,    help='lr*gamma after each test')
+    parser.add_argument('--grad_clip', type=float,                  default=1e-2,   help='grad_clip')
     parser.add_argument('--lambda_identity', type=float,            default=0.5,   help='')
     parser.add_argument('--lambda_A', type=float,                   default=0,   help='')
     parser.add_argument('--lambda_B', type=float,                   default=0,   help='')
