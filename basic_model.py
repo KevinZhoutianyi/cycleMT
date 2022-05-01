@@ -1,4 +1,5 @@
 from cProfile import label
+from lib2to3.pgen2.tokenize import generate_tokens
 from math import dist
 import os
 import random
@@ -76,8 +77,7 @@ class G(nn.Module):
         self.model = pretrained
         self.softmax = torch.nn.Softmax(dim=-1)
         self.encoder = self.model.get_encoder()
-        self.embedding = Embedding_(self.encoder.embed_tokens)
-        self.embedding.requires_grad_ = False
+        self.embedding = Embedding_(self.encoder.embed_tokens).requires_grad_()
     def set_require_grad(self,require):
         self.embedding.requires_grad_ = require
         for p in self.model.parameters():
@@ -95,11 +95,10 @@ class G(nn.Module):
         x_ = x#made copy
         if(len(x.shape)==3):
             x = torch.argmax(x,-1)#change logit to index if needed
-        generate_id = self.model.generate(x,num_beams=4)[:,1:].contiguous()#get rid of start padding
+        generate_id = self.generate(x,num_beams=4)[:,1:].contiguous()#get rid of start padding 
         att = (generate_id>0.5).long()
         x_emb = self.embedding(x_)
         distr = self.model(inputs_embeds=x_emb, attention_mask=x_attn, labels = generate_id, decoder_attention_mask =att).logits
-
         one_hot_output = F.gumbel_softmax(distr, tau=1, hard=True,dim=-1)
         # distr_softmax = self.softmax(distr)
         # one_hot = torch.zeros(generate_id.shape[0], generate_id.shape[1],distr_softmax.shape[-1], device=torch.device('cuda:0'),requires_grad=False)

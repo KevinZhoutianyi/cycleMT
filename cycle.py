@@ -172,6 +172,7 @@ class CycleGAN():
         # Fake
         pred_fake = D(fake.detach(),fake_attn)
         loss_D_fake = self.criterionGAN(pred_fake, torch.zeros((pred_fake.shape[0],1),device=self.device,requires_grad=False))
+        
         # Combined loss and calculate gradients
 
 
@@ -193,9 +194,8 @@ class CycleGAN():
 
     def backward_D_B(self):
         """Calculate GAN loss for discriminator D_B"""
-        fake_A = self.fake_A_pool.query(self.fake_A)#TODO:make leak here!
+        fake_A = self.fake_A_pool.query(self.fake_A)
         self.loss_D_B = self.backward_D_basic(self.D_B, self.real_A,self.real_A_attn,  fake_A,(fake_A[:, :,0] != 1).long())
-
         self.DB_meter.update(self.loss_D_B.item(),self.bs)
 
         

@@ -10,6 +10,7 @@ tensorboard/
 model/
 *.pt
 wandb/
+*.npy
 
 # C extensions
 *.so

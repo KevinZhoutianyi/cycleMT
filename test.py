@@ -68,9 +68,9 @@ def my_test(loader,model,tokenizer,logging,wandb):
             a_dis  = DB(a,a_attn)
             a_pred_dis  = DA(a_generate,(a_generate>0.5).long())
             b_pred_dis  = DB(b_generate,(b_generate>0.5).long())
-            logging.info("DA_a_: {}".format(''.join(map(lambda x: str(x.item())[:5]+',  ', a_dis))))
+            logging.info("DB_a_: {}".format(''.join(map(lambda x: str(x.item())[:5]+',  ', a_dis))))
             logging.info("DB_pred_dis: {}".format(''.join(map(lambda x:  str(x.item())[:5]+',  ', b_pred_dis))))
-            logging.info("DB_b: {}".format(''.join(map(lambda x:  str(x.item())[:5]+',  ', b_dis))))
+            logging.info("DA_b: {}".format(''.join(map(lambda x:  str(x.item())[:5]+',  ', b_dis))))
             logging.info("DA_pred_dis: {}".format(''.join(map(lambda x:  str(x.item())[:5]+',  ', a_pred_dis))))
 
             logging.info(f'GABloss:\t{GAB_loss.item()}')
