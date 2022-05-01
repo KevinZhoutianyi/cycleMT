@@ -35,7 +35,7 @@ if(True):
     parser.add_argument('--valid_num_points', type=int,             default = 100, help='validation data number')
     parser.add_argument('--train_num_points', type=int,             default = 500, help='train data number')
 
-    parser.add_argument('--batch_size', type=int,                   default=3,     help='Batch size')
+    parser.add_argument('--batch_size', type=int,                   default=2,     help='Batch size')
     parser.add_argument('--max_length', type=int,                   default=512,     help='max_length')
 
     parser.add_argument('--gpu', type=int,                          default=0,      help='gpu device id')
@@ -55,8 +55,8 @@ if(True):
     parser.add_argument('--G_grad_clip', type=float,                default=1,   help='grad_clip')
     parser.add_argument('--D_lr', type=float,                       default=1e-5,   help='learning rate for D')
     parser.add_argument('--D_weight_decay', type=float,             default=1e-3,   help='learning de for D')
-    parser.add_argument('--D_gamma', type=float,                    default=0.8,    help='lr*gamma after each test')
-    parser.add_argument('--D_grad_clip', type=float,                default=1e-3,   help='grad_clip')
+    parser.add_argument('--D_gamma', type=float,                    default=1,    help='lr*gamma after each test')
+    parser.add_argument('--D_grad_clip', type=float,                default=1e-2,   help='grad_clip')
     parser.add_argument('--lambda_identity', type=float,            default=0.5,   help='')
     parser.add_argument('--lambda_A', type=float,                   default=0,   help='')
     parser.add_argument('--lambda_B', type=float,                   default=0,   help='')
@@ -65,10 +65,10 @@ if(True):
 
     parser.add_argument('--load_D', type=int,                       default=0,      help='load pretrained D')
     parser.add_argument('--num_workers', type=int,                  default=0,      help='num_workers')
-    parser.add_argument('--valid_begin', type=int,                  default=1,      help='whether valid before train')
+    parser.add_argument('--valid_begin', type=int,                  default=0,      help='whether valid before train')
     parser.add_argument('--train_G', type=int,                      default=1,      help='whether valid before train')
     parser.add_argument('--train_D', type=int,                      default=1,      help='whether valid before train')
-    parser.add_argument('--D_pretrain_iter', type=int,              default=5000,      help='whether valid before train')
+    parser.add_argument('--D_pretrain_iter', type=int,              default=0,      help='whether valid before train')
 
 
     args = parser.parse_args()#(args=['--batch_size', '8',  '--no_cuda'])#used in ipynb

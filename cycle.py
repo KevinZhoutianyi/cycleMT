@@ -34,8 +34,8 @@ class CycleGAN():
         self.fake_A_pool = Pool()  
         self.fake_B_pool = Pool()  
         self.criterionGAN = torch.nn.MSELoss()
-        self.criterionCycle = torch.nn.CrossEntropyLoss( )
-        self.criterionIdt = torch.nn.CrossEntropyLoss( )
+        self.criterionCycle = torch.nn.CrossEntropyLoss(ignore_index=0)
+        self.criterionIdt = torch.nn.CrossEntropyLoss(ignore_index=0)
         # self.optimizer_G_AB = Adafactor(self.G_AB.parameters(), lr = args.G_lr ,scale_parameter=False, relative_step=False , warmup_init=False,clip_threshold=1,beta1=0,eps=( 1e-30,0.001))
         # self.optimizer_G_BA = Adafactor(self.G_BA.parameters(), lr = args.G_lr ,scale_parameter=False, relative_step=False , warmup_init=False,clip_threshold=1,beta1=0,eps=( 1e-30,0.001))
         # self.optimizer_D_A = Adafactor(self.D_A.parameters(), lr = args.D_lr ,scale_parameter=False, relative_step=False , warmup_init=False,clip_threshold=1,beta1=0,eps=( 1e-30,0.001))
@@ -130,21 +130,32 @@ class CycleGAN():
 
 
         # Forward cycle loss || G_B(G_A(A)) - A||
-        self.tail = torch.zeros(self.real_A.shape[1]-self.rec_A.shape[1],device=self.device,requires_grad=False).long()
-        self.tail = self.tail.repeat(self.real_A.shape[0],1)
-        self.one_hot = torch.zeros((self.tail.shape[0], self.tail.shape[1],self.rec_A.shape[-1]),device=self.device,requires_grad=False)
-        self.tail = self.one_hot.scatter_(-1, self.tail.unsqueeze(-1), 1.).float()
-        self.temp = torch.hstack((self.rec_A,self.tail))
-        self.loss_cycle_A = self.criterionCycle(self.temp.reshape(-1,self.temp.shape[-1]), self.real_A.reshape(-1)).mean() * lambda_A
+        if(self.real_A.shape[1]>self.rec_A.shape[1]):#realsize>rec -> add tail to the rec
+            self.tail = torch.zeros(self.real_A.shape[1]-self.rec_A.shape[1],device=self.device,requires_grad=False).long()
+            self.tail = self.tail.repeat(self.real_A.shape[0],1)
+            self.one_hot = torch.zeros((self.tail.shape[0], self.tail.shape[1],self.rec_A.shape[-1]),device=self.device,requires_grad=False)
+            self.tail = self.one_hot.scatter_(-1, self.tail.unsqueeze(-1), 1.).float()
+            self.temp = torch.hstack((self.rec_A,self.tail))
+            self.loss_cycle_A = self.criterionCycle(self.temp.reshape(-1,self.temp.shape[-1]), self.real_A.reshape(-1)).mean() * lambda_A
+        else:#realsize<rec -> add tail to the real
+            self.tail = torch.zeros(self.real_A.shape[0],self.rec_A.shape[1]-self.real_A.shape[1],device=self.device,requires_grad=False).long()
+            self.temp  = torch.hstack((self.real_A,self.tail))
+            self.loss_cycle_A = self.criterionCycle(self.rec_A.reshape(-1,self.rec_A.shape[-1]), self.temp.reshape(-1)).mean() *lambda_A
 
 
         # Backward cycle loss || G_A(G_B(B)) - B||
-        self.tail = torch.zeros(self.real_B.shape[1]-self.rec_B.shape[1],device=self.device,requires_grad=False).long()
-        self.tail =self.tail.repeat(self.real_B.shape[0],1)
-        self.one_hot = torch.zeros((self.tail.shape[0], self.tail.shape[1],self.rec_B.shape[-1]),device=self.device,requires_grad=False)
-        self.tail = self.one_hot.scatter_(-1, self.tail.unsqueeze(-1), 1.).float()
-        self.temp = torch.hstack((self.rec_B,self.tail))
-        self.loss_cycle_B = self.criterionCycle(self.temp.reshape(-1,self.temp.shape[-1]), self.real_B.reshape(-1)).mean() *lambda_B
+        if(self.real_B.shape[1]>self.rec_B.shape[1]):
+            self.tail = torch.zeros(self.real_B.shape[1]-self.rec_B.shape[1],device=self.device,requires_grad=False).long()
+            self.tail =self.tail.repeat(self.real_B.shape[0],1)
+            self.one_hot = torch.zeros((self.tail.shape[0], self.tail.shape[1],self.rec_B.shape[-1]),device=self.device,requires_grad=False)
+            self.tail = self.one_hot.scatter_(-1, self.tail.unsqueeze(-1), 1.).float()
+            self.temp = torch.hstack((self.rec_B,self.tail))
+            self.loss_cycle_B = self.criterionCycle(self.temp.reshape(-1,self.temp.shape[-1]), self.real_B.reshape(-1)).mean() *lambda_B
+        else:
+            self.tail = torch.zeros(self.real_B.shape[0],self.rec_B.shape[1]-self.real_B.shape[1],device=self.device,requires_grad=False).long()
+            self.temp  = torch.hstack((self.real_B,self.tail))
+            self.loss_cycle_B = self.criterionCycle(self.rec_B.reshape(-1,self.rec_B.shape[-1]), self.temp.reshape(-1)).mean() *lambda_B
+            
 
 
         # combined loss and calculate gradients
@@ -175,7 +186,7 @@ class CycleGAN():
         
         # Combined loss and calculate gradients
 
-
+        #loss_D = torch.mean(pred_real - pred_fake)
         loss_D = (loss_D_real + loss_D_fake) * 0.5
         # alpha = torch.rand(1)
         # grad_fake = torch.autograd.grad(outputs=loss_D,inputs=fake,create_graph=True,retain_graph=True,only_inputs=True,allow_unused=True)[0]

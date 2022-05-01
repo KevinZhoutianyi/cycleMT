@@ -95,7 +95,7 @@ class G(nn.Module):
         x_ = x#made copy
         if(len(x.shape)==3):
             x = torch.argmax(x,-1)#change logit to index if needed
-        generate_id = self.generate(x,num_beams=4)[:,1:].contiguous()#get rid of start padding 
+        generate_id = self.generate(x,num_beams=2)[:,1:].contiguous()#get rid of start padding 
         att = (generate_id>0.5).long()
         x_emb = self.embedding(x_)
         distr = self.model(inputs_embeds=x_emb, attention_mask=x_attn, labels = generate_id, decoder_attention_mask =att).logits
@@ -120,7 +120,7 @@ class G(nn.Module):
         prefix = self.tokenzied_prefix_attn.repeat(x.shape[0],1).cuda()
         x_attn = torch.hstack((prefix,x_attn))
         return x,x_attn
-    def generate(self, input_ids, num_beams = 4, max_length=512):#long training time!
+    def generate(self, input_ids, num_beams = 2, max_length=512):#long training time!
         output_ids = self.model.generate( input_ids = input_ids, num_beams = num_beams, early_stopping = True, max_length = max_length, length_penalty =0.6, repetition_penalty = 0.8)
         return output_ids
     def test_generate(self, x, num_beams = 4, max_length=512):
