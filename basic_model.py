@@ -13,6 +13,7 @@ import torch.nn.functional as F
 import logging
 from parameter import seed_
 from utils import *
+import torch.nn.functional as F
 
 def seed_torch(seed=0):
     random.seed(seed)
@@ -75,14 +76,15 @@ class G(nn.Module):
         self.model = pretrained
         self.softmax = torch.nn.Softmax(dim=-1)
         self.encoder = self.model.get_encoder()
-        self.embedding = Embedding_(self.encoder.embed_tokens).requires_grad_()
+        self.embedding = Embedding_(self.encoder.embed_tokens)
+        self.embedding.requires_grad_ = False
     def set_require_grad(self,require):
         self.embedding.requires_grad_ = require
         for p in self.model.parameters():
             p.requires_grad = require
 
 
-    def gumble_generate(self,x,x_attn):
+    def gumbel_generate(self,x,x_attn):
         '''
         input is (batchsize,sentencelength) without prefix and start padding
         1. add prefix
@@ -97,9 +99,11 @@ class G(nn.Module):
         att = (generate_id>0.5).long()
         x_emb = self.embedding(x_)
         distr = self.model(inputs_embeds=x_emb, attention_mask=x_attn, labels = generate_id, decoder_attention_mask =att).logits
-        distr_softmax = self.softmax(distr)
-        one_hot = torch.zeros(generate_id.shape[0], generate_id.shape[1],distr_softmax.shape[-1], device=torch.device('cuda:0'),requires_grad=False)
-        one_hot_output = one_hot.scatter_(-1, generate_id.unsqueeze(-1), 1.).float().detach() + distr_softmax - distr_softmax.detach()
+
+        one_hot_output = F.gumbel_softmax(distr, tau=1, hard=True,dim=-1)
+        # distr_softmax = self.softmax(distr)
+        # one_hot = torch.zeros(generate_id.shape[0], generate_id.shape[1],distr_softmax.shape[-1], device=torch.device('cuda:0'),requires_grad=False)
+        # one_hot_output = one_hot.scatter_(-1, generate_id.unsqueeze(-1), 1.).float().detach() + distr_softmax - distr_softmax.detach()
         return one_hot_output,att# not start with padding
 
 

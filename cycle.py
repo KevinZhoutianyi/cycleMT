@@ -40,20 +40,20 @@ class CycleGAN():
         # self.optimizer_G_BA = Adafactor(self.G_BA.parameters(), lr = args.G_lr ,scale_parameter=False, relative_step=False , warmup_init=False,clip_threshold=1,beta1=0,eps=( 1e-30,0.001))
         # self.optimizer_D_A = Adafactor(self.D_A.parameters(), lr = args.D_lr ,scale_parameter=False, relative_step=False , warmup_init=False,clip_threshold=1,beta1=0,eps=( 1e-30,0.001))
         # self.optimizer_D_B = Adafactor(self.D_B.parameters(), lr = args.D_lr ,scale_parameter=False, relative_step=False , warmup_init=False,clip_threshold=1,beta1=0,eps=( 1e-30,0.001))
-        self.optimizer_G_AB = torch.optim.Adam(self.G_AB.parameters(),  lr= args.G_lr , betas=(0.5, 0.999), weight_decay=args.G_weight_decay)
-        self.optimizer_G_BA = torch.optim.Adam(self.G_BA.parameters(),  lr= args.G_lr , betas=(0.5, 0.999), weight_decay=args.G_weight_decay)
-        self.optimizer_D_A = torch.optim.Adam(self.D_A.parameters(),  lr= args.D_lr , betas=(0.5, 0.999), weight_decay=args.D_weight_decay)
-        self.optimizer_D_B = torch.optim.Adam(self.D_B.parameters(),  lr= args.D_lr , betas=(0.5, 0.999), weight_decay=args.D_weight_decay)
+        self.optimizer_G_AB = torch.optim.RMSprop(self.G_AB.parameters(),  lr= args.G_lr , weight_decay=args.G_weight_decay)
+        self.optimizer_G_BA = torch.optim.RMSprop(self.G_BA.parameters(),  lr= args.G_lr , weight_decay=args.G_weight_decay)
+        self.optimizer_D_A = torch.optim.RMSprop(self.D_A.parameters(),  lr= args.D_lr , weight_decay=args.D_weight_decay)
+        self.optimizer_D_B = torch.optim.RMSprop(self.D_B.parameters(),  lr= args.D_lr, weight_decay=args.D_weight_decay)
         self.scheduler_G_AB =torch.optim.lr_scheduler.StepLR(self.optimizer_G_AB, 1, gamma=args.G_gamma)
         self.scheduler_G_BA = torch.optim.lr_scheduler.StepLR(self.optimizer_G_BA, 1, gamma=args.G_gamma)
         self.scheduler_D_A =torch.optim.lr_scheduler.StepLR(self.optimizer_D_A, 1, gamma=args.D_gamma)
         self.scheduler_D_B = torch.optim.lr_scheduler.StepLR(self.optimizer_D_B, 1, gamma=args.D_gamma)
     
     def forward(self):#TODO: prefix + gumblesoftmax
-        self.fake_B,self.fake_B_attn = self.G_AB.gumble_generate(self.real_A,self.real_A_attn)  # G_A(A)
-        self.rec_A,self.rec_A_attn = self.G_BA.gumble_generate(self.fake_B,self.fake_B_attn)   # G_B(G_A(A))
-        self.fake_A,self.fake_A_attn = self.G_BA.gumble_generate(self.real_B,self.real_B_attn)  # G_B(B)
-        self.rec_B,self.rec_B_attn = self.G_AB.gumble_generate(self.fake_A,self.fake_A_attn)   # G_A(G_B(B))
+        self.fake_B,self.fake_B_attn = self.G_AB.gumbel_generate(self.real_A,self.real_A_attn)  # G_A(A)
+        self.rec_A,self.rec_A_attn = self.G_BA.gumbel_generate(self.fake_B,self.fake_B_attn)   # G_B(G_A(A))
+        self.fake_A,self.fake_A_attn = self.G_BA.gumbel_generate(self.real_B,self.real_B_attn)  # G_B(B)
+        self.rec_B,self.rec_B_attn = self.G_AB.gumbel_generate(self.fake_A,self.fake_A_attn)   # G_A(G_B(B))
     def set_input(self,A,A_attn,B,B_attn):
         self.real_A,self.real_A_attn = A,A_attn
         self.real_B,self.real_B_attn = B,B_attn
@@ -173,7 +173,15 @@ class CycleGAN():
         pred_fake = D(fake.detach(),fake_attn)
         loss_D_fake = self.criterionGAN(pred_fake, torch.zeros((pred_fake.shape[0],1),device=self.device,requires_grad=False))
         # Combined loss and calculate gradients
+
+
         loss_D = (loss_D_real + loss_D_fake) * 0.5
+        # alpha = torch.rand(1)
+        # grad_fake = torch.autograd.grad(outputs=loss_D,inputs=fake,create_graph=True,retain_graph=True,only_inputs=True,allow_unused=True)[0]
+        # grad_real = torch.autograd.grad(outputs=loss_D,inputs=real,create_graph=True,retain_graph=True,only_inputs=True,allow_unused=True)[0]
+        # gradient_penalty = (    alpha*((grad_fake.norm(2,dim=1)-1)**2).mean()   +   (1-alpha)*((grad_real.norm(2,dim=1)-1)**2).mean()   )*0.5
+    
+        # loss_D = loss_D+gradient_penalty*10
         loss_D.backward()
         return loss_D
 
