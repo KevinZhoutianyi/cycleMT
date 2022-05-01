@@ -69,9 +69,9 @@ class G(nn.Module):
         super(G, self).__init__()
         self.name = name
         self.tokenizer = tokenizer
-        self.tokenzied_prefix = tokenize([prefix],tokenizer,512,True)[0].squeeze()
+        self.tokenzied_prefix = tokenize([prefix],tokenizer,512,True)[0].squeeze().cuda()
         self.tokenzied_prefix.require_grad = False
-        self.tokenzied_prefix_attn = tokenize([prefix],tokenizer,512,True)[1].squeeze()
+        self.tokenzied_prefix_attn = tokenize([prefix],tokenizer,512,True)[1].squeeze().cuda()
         self.tokenzied_prefix_attn.require_grad = False
         self.args = args
         self.model = pretrained
@@ -109,7 +109,7 @@ class G(nn.Module):
 
 
     def add_prefix(self,x,x_attn):
-        prefix = self.tokenzied_prefix.repeat(x.shape[0],1).cuda()
+        prefix = self.tokenzied_prefix.repeat(x.shape[0],1)#.cuda()
         if(len(x.shape)==2):
             x = torch.hstack((prefix,x))
         else:
@@ -117,7 +117,7 @@ class G(nn.Module):
             prefix = one_hot.scatter_(-1, prefix.unsqueeze(-1), 1.).float()
             
             x = torch.hstack((prefix,x))
-        prefix = self.tokenzied_prefix_attn.repeat(x.shape[0],1).cuda()
+        prefix = self.tokenzied_prefix_attn.repeat(x.shape[0],1)#.cuda()
         x_attn = torch.hstack((prefix,x_attn))
         return x,x_attn
     def generate(self, input_ids, num_beams = 2, max_length=512):#long training time!
@@ -126,7 +126,7 @@ class G(nn.Module):
         return output_ids
     def test_generate(self, x, num_beams = 4, max_length=512):
         max_length = self.args.max_length
-        prefix = self.tokenzied_prefix.repeat(x.shape[0],1).cuda()
+        prefix = self.tokenzied_prefix.repeat(x.shape[0],1)#.cuda()
         x = torch.hstack((prefix,x))
         output_ids = self.model.generate( input_ids = x, num_beams = num_beams, early_stopping = True, max_length = max_length, length_penalty =0.6, repetition_penalty = 0.8)
         return output_ids

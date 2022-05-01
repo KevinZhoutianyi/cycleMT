@@ -11,8 +11,15 @@ class CycleGAN():
     def __init__(self,args,GAB,GBA,DA,DB,tokenizer) -> None:
         
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.G_AB = G(args=args,pretrained=GAB,name="G_AB",tokenizer=tokenizer,prefix='translate English to German: ').to(self.device)
-        self.G_BA = G(args=args,pretrained=GBA,name="G_BA",tokenizer=tokenizer,prefix='translate German to English: ').to(self.device)
+        if(args.load_G == 1):
+            print("G_B and G_A are loaded")
+            self.G_AB = None
+            self.G_AB = torch.load('./model/G_AB.pt').to(self.device)
+            self.G_BA = None
+            self.G_BA = torch.load('./model/G_BA.pt').to(self.device)
+        else:
+            self.G_AB = G(args=args,pretrained=GAB,name="G_AB",tokenizer=tokenizer,prefix='translate English to German: ').to(self.device)
+            self.G_BA = G(args=args,pretrained=GBA,name="G_BA",tokenizer=tokenizer,prefix='translate German to English: ').to(self.device)
         if(args.load_D == 1):
             print("D_A and D_B are loaded")
             self.D_A = None
