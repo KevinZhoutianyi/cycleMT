@@ -55,15 +55,14 @@ def my_test(loader,model,tokenizer,logging,wandb):
         GBA_metric_sacrebleu.add_batch(predictions=b_pred_str, references=a_label_str)
 
         if  step%100==0:
-            # logging.info(f"a{a}")
-            # logging.info(f"a_attn{a_attn}")
-            # logging.info(f"b{b}")
-            # logging.info(f"b_attn{b_attn}")
-            # logging.info(f"a_generate{a_generate}")
-            # logging.info(f"(a_generate>0.5).long()){(a_generate>0.5).long()}")
-            # logging.info(f"b_generate{b_generate}")
-            # logging.info(f"(b_generate>0.5).long(){(b_generate>0.5).long()}")
-            
+            logging.info(f"a{a}")
+            logging.info(f"a_attn{a_attn}")
+            logging.info(f"b{b}")
+            logging.info(f"b_attn{b_attn}")
+            logging.info(f"a_generate{a_generate}")
+            logging.info(f"(a_generate>0.5).long()){(a_generate>0.5).long()}")
+            logging.info(f"b_generate{b_generate}")
+            logging.info(f"(b_generate>0.5).long(){(b_generate>0.5).long()}")
             b_dis  = DA(b,b_attn)
             a_dis  = DB(a,a_attn)
             a_pred_dis  = DA(a_generate,(a_generate>0.5).long())

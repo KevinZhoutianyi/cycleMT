@@ -130,11 +130,11 @@ class CycleGAN():
         '''
 
         # GAN loss D_A(G_A(A))
-        # self.loss_G_A = self.criterionGAN(self.D_A(self.fake_B,self.fake_B_attn), torch.ones((self.fake_B.shape[0],1),device=self.device))*lambda_once
-        self.loss_G_A = torch.mean(-self.D_A(self.fake_B,self.fake_B_attn))*lambda_once
+        self.loss_G_A = self.criterionGAN(self.D_A(self.fake_B,self.fake_B_attn), torch.ones((self.fake_B.shape[0],1),device=self.device))*lambda_once
+        # self.loss_G_A = torch.mean(-self.D_A(self.fake_B,self.fake_B_attn))*lambda_once
         # GAN loss D_B(G_B(B))
-        # self.loss_G_B = self.criterionGAN(self.D_B(self.fake_A,self.fake_A_attn), torch.ones((self.fake_A.shape[0],1),device=self.device))*lambda_once
-        self.loss_G_B = torch.mean(-self.D_B(self.fake_A,self.fake_A_attn))*lambda_once
+        self.loss_G_B = self.criterionGAN(self.D_B(self.fake_A,self.fake_A_attn), torch.ones((self.fake_A.shape[0],1),device=self.device))*lambda_once
+        # self.loss_G_B = torch.mean(-self.D_B(self.fake_A,self.fake_A_attn))*lambda_once
 
 
         # Forward cycle loss || G_B(G_A(A)) - A||
@@ -186,16 +186,25 @@ class CycleGAN():
         We also call loss_D.backward() to calculate the gradients.
         """
         # Real
+        print(D.name)
+        print(real)
+        print(real_attn)
         pred_real = D(real,real_attn)
-        # loss_D_real = self.criterionGAN(pred_real, torch.ones((pred_real.shape[0],1),device=self.device,requires_grad=False))
+        print(pred_real)
+        loss_D_real = self.criterionGAN(pred_real, torch.ones((pred_real.shape[0],1),device=self.device,requires_grad=False))
+        print(loss_D_real)
         # Fake
+        print(torch.argmax(fake,-1))
+        print(fake_attn)
         pred_fake = D(fake.detach(),fake_attn)
-        # loss_D_fake = self.criterionGAN(pred_fake, torch.zeros((pred_fake.shape[0],1),device=self.device,requires_grad=False))
+        print(pred_fake)
+        loss_D_fake = self.criterionGAN(pred_fake, torch.zeros((pred_fake.shape[0],1),device=self.device,requires_grad=False))
+        print(loss_D_fake)
         
         # Combined loss and calculate gradients
 
-        loss_D = torch.mean(pred_fake - pred_real)
-        # loss_D = (loss_D_real + loss_D_fake) * 0.5
+        # loss_D = torch.mean(pred_fake - pred_real)
+        loss_D = (loss_D_real + loss_D_fake) * 0.5
     
         # loss_D = loss_D+gradient_penalty*10
         loss_D.backward()
