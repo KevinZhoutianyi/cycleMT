@@ -13,7 +13,7 @@ rm -f ./tensorboard/*
 python main.py  --num_workers 4             --batch_size 32             --max_length 256    \
                 --train_num_points 50000    --valid_num_points 1000                         \
                 --D_lr 1e-5                 --G_lr 1e-4                 --D_gamma 0.5       \
-                --rep_iter 1000             --D_pretrain_iter 5000      --test_iter 5000    \
+                --rep_iter 1000             --D_pretrain_iter 2500      --test_iter 5000    \
                 --lambda_once 1             --lambda_B 0                --lambda_A 0        \
                 --load_D 0                  --load_G 0                  --valid_begin 1             --train_D 1         \
                 --exp_name  fixgenerate256
