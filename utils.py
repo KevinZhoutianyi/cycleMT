@@ -99,3 +99,10 @@ class AvgrageMeter(object):
         self.sum += val * n
         self.cnt += n
         self.avg = self.sum / self.cnt
+        
+from transformers import AutoTokenizer
+tokenizer = AutoTokenizer.from_pretrained('t5-small')
+def d(l):
+    return tokenizer.batch_decode(l,skip_special_tokens=True)
+def en(l):
+    return tokenize(l,tokenizer,512,True)

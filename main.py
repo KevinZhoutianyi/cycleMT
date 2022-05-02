@@ -64,12 +64,12 @@ if(True):
     parser.add_argument('--smoothing', type=float,                  default=0.5,    help='labelsmoothing')
 
     parser.add_argument('--load_D', type=int,                       default=1,      help='load pretrained D')
-    parser.add_argument('--load_G', type=int,                       default=1,      help='load pretrained D')
+    parser.add_argument('--load_G', type=int,                       default=0,      help='load pretrained D')
     parser.add_argument('--num_workers', type=int,                  default=0,      help='num_workers')
     parser.add_argument('--valid_begin', type=int,                  default=0,      help='whether valid before train')
     parser.add_argument('--train_G', type=int,                      default=1,      help='whether valid before train')
     parser.add_argument('--train_D', type=int,                      default=0,      help='whether valid before train')
-    parser.add_argument('--D_pretrain_iter', type=int,              default=0,      help='whether valid before train')
+    parser.add_argument('--D_pretrain_iter', type=int,              default=100,      help='whether valid before train')
 
 
     args = parser.parse_args()#(args=['--batch_size', '8',  '--no_cuda'])#used in ipynb
