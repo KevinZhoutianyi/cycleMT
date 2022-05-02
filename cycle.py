@@ -186,20 +186,11 @@ class CycleGAN():
         We also call loss_D.backward() to calculate the gradients.
         """
         # Real
-        print(D.name)
-        print(real)
-        print(real_attn)
         pred_real = D(real,real_attn)
-        print(pred_real)
         loss_D_real = self.criterionGAN(pred_real, torch.ones((pred_real.shape[0],1),device=self.device,requires_grad=False))
-        print(loss_D_real)
         # Fake
-        print(torch.argmax(fake,-1))
-        print(fake_attn)
         pred_fake = D(fake.detach(),fake_attn)
-        print(pred_fake)
         loss_D_fake = self.criterionGAN(pred_fake, torch.zeros((pred_fake.shape[0],1),device=self.device,requires_grad=False))
-        print(loss_D_fake)
         
         # Combined loss and calculate gradients
 
@@ -214,14 +205,14 @@ class CycleGAN():
         """Calculate GAN loss for discriminator D_A"""
         #fake_B = self.fake_B_pool.query(self.fake_B)
         fake_B =self.fake_B
-        self.loss_D_A = self.backward_D_basic(self.D_A, self.real_B, self.real_B_attn, fake_B, (fake_B[:, :,0] != 1).long())
+        self.loss_D_A = self.backward_D_basic(self.D_A, self.real_B, self.real_B_attn, fake_B,1-(fake_B[:, :,0]>0.5).long())
         self.DA_meter.update(self.loss_D_A.item(),self.bs)
 
     def backward_D_B(self):
         """Calculate GAN loss for discriminator D_B"""
         # fake_A = self.fake_A_pool.query(self.fake_A)
         fake_A = self.fake_A
-        self.loss_D_B = self.backward_D_basic(self.D_B, self.real_A,self.real_A_attn,  fake_A,(fake_A[:, :,0] != 1).long())
+        self.loss_D_B = self.backward_D_basic(self.D_B, self.real_A,self.real_A_attn,  fake_A,1-(fake_A[:, :,0]>0.5).long())
         self.DB_meter.update(self.loss_D_B.item(),self.bs)
 
         
