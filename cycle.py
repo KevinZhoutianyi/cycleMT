@@ -130,9 +130,11 @@ class CycleGAN():
         '''
 
         # GAN loss D_A(G_A(A))
-        self.loss_G_A = self.criterionGAN(self.D_A(self.fake_B,self.fake_B_attn), torch.ones((self.fake_B.shape[0],1),device=self.device))*lambda_once
+        # self.loss_G_A = self.criterionGAN(self.D_A(self.fake_B,self.fake_B_attn), torch.ones((self.fake_B.shape[0],1),device=self.device))*lambda_once
+        self.loss_G_A = -self.D_A(self.fake_B,self.fake_B_attn)*lambda_once
         # GAN loss D_B(G_B(B))
-        self.loss_G_B = self.criterionGAN(self.D_B(self.fake_A,self.fake_A_attn), torch.ones((self.fake_A.shape[0],1),device=self.device))*lambda_once
+        # self.loss_G_B = self.criterionGAN(self.D_B(self.fake_A,self.fake_A_attn), torch.ones((self.fake_A.shape[0],1),device=self.device))*lambda_once
+        self.loss_G_B = -self.D_B(self.fake_A,self.fake_A_attn)*lambda_once
 
 
         # Forward cycle loss || G_B(G_A(A)) - A||
@@ -185,19 +187,15 @@ class CycleGAN():
         """
         # Real
         pred_real = D(real,real_attn)
-        loss_D_real = self.criterionGAN(pred_real, torch.ones((pred_real.shape[0],1),device=self.device,requires_grad=False))
+        # loss_D_real = self.criterionGAN(pred_real, torch.ones((pred_real.shape[0],1),device=self.device,requires_grad=False))
         # Fake
         pred_fake = D(fake.detach(),fake_attn)
-        loss_D_fake = self.criterionGAN(pred_fake, torch.zeros((pred_fake.shape[0],1),device=self.device,requires_grad=False))
+        # loss_D_fake = self.criterionGAN(pred_fake, torch.zeros((pred_fake.shape[0],1),device=self.device,requires_grad=False))
         
         # Combined loss and calculate gradients
 
-        #loss_D = torch.mean(pred_real - pred_fake)
-        loss_D = (loss_D_real + loss_D_fake) * 0.5
-        # alpha = torch.rand(1)
-        # grad_fake = torch.autograd.grad(outputs=loss_D,inputs=fake,create_graph=True,retain_graph=True,only_inputs=True,allow_unused=True)[0]
-        # grad_real = torch.autograd.grad(outputs=loss_D,inputs=real,create_graph=True,retain_graph=True,only_inputs=True,allow_unused=True)[0]
-        # gradient_penalty = (    alpha*((grad_fake.norm(2,dim=1)-1)**2).mean()   +   (1-alpha)*((grad_real.norm(2,dim=1)-1)**2).mean()   )*0.5
+        loss_D = torch.mean(pred_fake - pred_real)
+        # loss_D = (loss_D_real + loss_D_fake) * 0.5
     
         # loss_D = loss_D+gradient_penalty*10
         loss_D.backward()
