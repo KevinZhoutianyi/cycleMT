@@ -1,3 +1,3 @@
-seed_ = 2200
-language = 'de'
-full_language = 'German'
+seed_ = 4396
+language = 'tr'
+full_language = 'Turkish'
