@@ -9,7 +9,7 @@ import torch
 from torch.utils.data import TensorDataset
 from torch.utils.data import DataLoader
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-from parameter import seed_
+from parameter import seed_,language
 def count_parameters_in_MB(model):
     return np.sum(np.prod(v.size()) for name, v in model.named_parameters() if "auxiliary" not in name)/1e6
 def seed_torch(seed=0):
@@ -68,7 +68,7 @@ def tokenize(text_data, tokenizer, max_length, padding = True):
     
     return input_ids, attention_mask
 def get_Dataset_chaos(dataset, tokenizer,max_length):
-    b_sentence = [x['de'] for x in dataset]
+    b_sentence = [x[language] for x in dataset]
     a_sentence = [x['en'] for x in dataset]
     a_ids, a_ids_attn = tokenize(a_sentence, tokenizer, max_length = max_length)
     shuffle_index = torch.randperm(a_ids.shape[0])
@@ -79,7 +79,7 @@ def get_Dataset_chaos(dataset, tokenizer,max_length):
     train_data = TensorDataset(a_ids, a_ids_attn, b_ids, b_ids_attn)
     return train_data
 def get_Dataset(dataset, tokenizer,max_length):
-    b_sentence = [x['de'] for x in dataset]
+    b_sentence = [x[language] for x in dataset]
     a_sentence = [x['en'] for x in dataset]
     a_ids, a_ids_attn = tokenize(a_sentence, tokenizer, max_length = max_length)
     b_ids, b_ids_attn = tokenize(b_sentence, tokenizer, max_length = max_length)

@@ -5,6 +5,7 @@ import torch.nn as nn
 from utils import *
 from transformers.optimization import Adafactor, AdafactorSchedule
 from basic_model import *
+from parameter import *
 
 class CycleGAN():
     #G_AB       ->       gumbel softmax       ->       D_A      ->       G_BA     ->      gumbel softmax      ->      D_B
@@ -18,8 +19,8 @@ class CycleGAN():
             self.G_BA = None
             self.G_BA = torch.load('./model/G_BA.pt').to(self.device)
         else:
-            self.G_AB = G(args=args,pretrained=GAB,name="G_AB",tokenizer=tokenizer,prefix='translate English to German: ').to(self.device)
-            self.G_BA = G(args=args,pretrained=GBA,name="G_BA",tokenizer=tokenizer,prefix='translate German to English: ').to(self.device)
+            self.G_AB = G(args=args,pretrained=GAB,name="G_AB",tokenizer=tokenizer,prefix='translate English to '+full_language+': ').to(self.device)
+            self.G_BA = G(args=args,pretrained=GBA,name="G_BA",tokenizer=tokenizer,prefix='translate '+full_language+' to English: ').to(self.device)
         if(args.load_D == 1):
             print("D_A and D_B are loaded")
             self.D_A = None
