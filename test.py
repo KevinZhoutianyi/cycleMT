@@ -26,17 +26,16 @@ def my_test(loader,model,tokenizer,logging,wandb):
         a_attn = Variable(batch[1], requires_grad=False).to(device, non_blocking=False)
         b = Variable(batch[2], requires_grad=False).to(device, non_blocking=False)#de    
         b_attn = Variable(batch[3], requires_grad=False).to(device, non_blocking=False)
-
-
         
-        GAB_loss = GAB.forward(a,a_attn,b,b_attn).loss
-        GBA_loss = GBA.forward(b,b_attn,a,a_attn).loss
-        GAB_acc+= GAB_loss.item()
-        GBA_acc+= GBA_loss.item()
-        counter+= 1
 
         a_generate = GAB.test_generate(a)[:,1:].contiguous()
         b_generate  = GBA.test_generate(b)[:,1:].contiguous()
+
+        GAB_loss = GAB.forward(a_generate,(a_generate>0.5).long(),a,a_attn).loss
+        GBA_loss = GBA.forward(b_generate,(a_generate>0.5).long(),b,b_attn).loss
+        GAB_acc+= GAB_loss.item()
+        GBA_acc+= GBA_loss.item()
+        counter+= 1
 
 
 

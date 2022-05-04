@@ -49,7 +49,7 @@ if(True):
 
     parser.add_argument('--epochs', type=int,                       default=50,     help='num of training epochs')
 
-    parser.add_argument('--G_lr', type=float,                       default=5e-6,   help='learning rate for G')
+    parser.add_argument('--G_lr', type=float,                       default=5e-5,   help='learning rate for G')
     parser.add_argument('--G_weight_decay', type=float,             default=1e-3,   help='learning de for G')
     parser.add_argument('--G_gamma', type=float,                    default=0.9,    help='lr*gamma after each test')
     parser.add_argument('--G_grad_clip', type=float,                default=1,   help='grad_clip')
@@ -60,7 +60,7 @@ if(True):
     parser.add_argument('--lambda_identity', type=float,            default=0.5,   help='')
     parser.add_argument('--lambda_A', type=float,                   default=100,   help='')
     parser.add_argument('--lambda_B', type=float,                   default=100,   help='')
-    parser.add_argument('--lambda_once', type=float,                default=1,   help='')
+    parser.add_argument('--lambda_once', type=float,                default=0,   help='')
     parser.add_argument('--smoothing', type=float,                  default=0.5,    help='labelsmoothing')
 
     parser.add_argument('--load_D', type=int,                       default=0,      help='load pretrained D')
@@ -69,7 +69,7 @@ if(True):
     parser.add_argument('--valid_begin', type=int,                  default=1,      help='whether valid before train')
     parser.add_argument('--train_G', type=int,                      default=1,      help='whether valid before train')
     parser.add_argument('--train_D', type=int,                      default=1,      help='whether valid before train')
-    parser.add_argument('--D_pretrain_iter', type=int,              default=500,      help='whether valid before train')
+    parser.add_argument('--D_pretrain_iter', type=int,              default=0,      help='whether valid before train')
 
 
     args = parser.parse_args()#(args=['--batch_size', '8',  '--no_cuda'])#used in ipynb
@@ -115,7 +115,7 @@ tokenizer = AutoTokenizer.from_pretrained(GABmodelname)
 # %%
 dataset = load_dataset('wmt16',language+'-en')
 train = dataset['train']['translation'][:args.train_num_points]
-valid = dataset['train']['translation'][(args.train_num_points-args.valid_num_points):args.train_num_points]#TODO:
+valid = dataset['validation']['translation'][:args.valid_num_points]#TODO:
 
 
 train_data = get_Dataset_chaos(train, tokenizer,max_length=args.max_length)
