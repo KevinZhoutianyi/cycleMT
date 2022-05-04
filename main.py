@@ -70,6 +70,7 @@ if(True):
     parser.add_argument('--train_G', type=int,                      default=1,      help='whether valid before train')
     parser.add_argument('--train_D', type=int,                      default=1,      help='whether valid before train')
     parser.add_argument('--D_pretrain_iter', type=int,              default=0,      help='whether valid before train')
+    parser.add_argument('--poolsize', type=int,                     default=50,      help='whether valid before train')
 
 
     args = parser.parse_args()#(args=['--batch_size', '8',  '--no_cuda'])#used in ipynb
