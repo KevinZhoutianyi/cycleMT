@@ -6,7 +6,7 @@ from utils import *
 from transformers.optimization import Adafactor, AdafactorSchedule
 from basic_model import *
 from parameter import *
-
+ #
 class CycleGAN():
     #G_AB       ->       gumbel softmax       ->       D_A      ->       G_BA     ->      gumbel softmax      ->      D_B
     def __init__(self,args,GAB,GBA,DA,DB,tokenizer) -> None:
