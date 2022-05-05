@@ -217,10 +217,12 @@ class CycleGAN():
         interpolates = torch.autograd.Variable(interpolates, requires_grad=True)
         output = D(interpolates,1-(interpolates[:, :,0]>1e-3).long())
         gradient = torch.autograd.grad(outputs=output, inputs=interpolates,grad_outputs=torch.ones(output.size()).cuda(),create_graph=True, retain_graph=True, only_inputs=True)[0]
+        
         gradient_penalty = ((gradient.norm(2, dim=1) - 1) ** 2).mean() * self.args.lambda_GP#TODO
-        loss_D = loss_D+gradient_penalty
-        loss_D.backward()
-        return loss_D
+        
+        ret = loss_D+gradient_penalty
+        ret.backward()
+        return ret
 
     def backward_D_A(self):
         """Calculate GAN loss for discriminator D_A"""
