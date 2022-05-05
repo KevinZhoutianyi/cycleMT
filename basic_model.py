@@ -61,7 +61,7 @@ class D(nn.Module):
         distr = torch.mul(distr,x_attn)#previously,even the word is 0, their will be some value in the context vector, the model will make them large to classifier.
         distr = torch.sum(distr,1)/torch.sum(x_attn,1)
         ret =  self.classifier(distr)#(bs,1)
-        ret = self.relu(ret)#(bs,1)
+        # ret = self.relu(ret)#(bs,1)no for WGAN
         return ret
 
 class G(nn.Module):

@@ -58,19 +58,20 @@ if(True):
     parser.add_argument('--D_gamma', type=float,                    default=1,    help='lr*gamma after each test')
     parser.add_argument('--D_grad_clip', type=float,                default=1e-2,   help='grad_clip')
     parser.add_argument('--lambda_identity', type=float,            default=0.5,   help='')
-    parser.add_argument('--lambda_A', type=float,                   default=100,   help='')
-    parser.add_argument('--lambda_B', type=float,                   default=100,   help='')
-    parser.add_argument('--lambda_once', type=float,                default=0,   help='')
+    parser.add_argument('--lambda_A', type=float,                   default=50,   help='')
+    parser.add_argument('--lambda_B', type=float,                   default=50,   help='')
+    parser.add_argument('--lambda_once', type=float,                default=1,   help='')
+    parser.add_argument('--lambda_GP', type=float,                  default=10,   help='WGANGP pentalty')
     parser.add_argument('--smoothing', type=float,                  default=0.5,    help='labelsmoothing')
 
     parser.add_argument('--load_D', type=int,                       default=0,      help='load pretrained D')
     parser.add_argument('--load_G', type=int,                       default=0,      help='load pretrained D')
     parser.add_argument('--num_workers', type=int,                  default=0,      help='num_workers')
-    parser.add_argument('--valid_begin', type=int,                  default=1,      help='whether valid before train')
+    parser.add_argument('--valid_begin', type=int,                  default=0,      help='whether valid before train')
     parser.add_argument('--train_G', type=int,                      default=1,      help='whether valid before train')
     parser.add_argument('--train_D', type=int,                      default=1,      help='whether valid before train')
-    parser.add_argument('--D_pretrain_iter', type=int,              default=0,      help='whether valid before train')
-    parser.add_argument('--poolsize', type=int,                     default=50,      help='whether valid before train')
+    parser.add_argument('--D_pretrain_iter', type=int,              default=100,      help='whether valid before train')
+    parser.add_argument('--poolsize', type=int,                     default=1,      help='whether valid before train')
 
 
     args = parser.parse_args()#(args=['--batch_size', '8',  '--no_cuda'])#used in ipynb

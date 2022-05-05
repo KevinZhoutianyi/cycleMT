@@ -1,5 +1,6 @@
 
 
+from numpy import interp
 import torch
 import torch.nn as nn
 from utils import *
@@ -131,11 +132,11 @@ class CycleGAN():
         '''
 
         # GAN loss D_A(G_A(A))
-        self.loss_G_A = self.criterionGAN(self.D_A(self.fake_B,self.fake_B_attn), torch.ones((self.fake_B.shape[0],1),device=self.device))*lambda_once
-        # self.loss_G_A = torch.mean(-self.D_A(self.fake_B,self.fake_B_attn))*lambda_once
+        # self.loss_G_A = self.criterionGAN(self.D_A(self.fake_B,self.fake_B_attn), torch.ones((self.fake_B.shape[0],1),device=self.device))*lambda_once
+        self.loss_G_A = torch.mean(-self.D_A(self.fake_B,self.fake_B_attn))*lambda_once
         # GAN loss D_B(G_B(B))
-        self.loss_G_B = self.criterionGAN(self.D_B(self.fake_A,self.fake_A_attn), torch.ones((self.fake_A.shape[0],1),device=self.device))*lambda_once
-        # self.loss_G_B = torch.mean(-self.D_B(self.fake_A,self.fake_A_attn))*lambda_once
+        # self.loss_G_B = self.criterionGAN(self.D_B(self.fake_A,self.fake_A_attn), torch.ones((self.fake_A.shape[0],1),device=self.device))*lambda_once
+        self.loss_G_B = torch.mean(-self.D_B(self.fake_A,self.fake_A_attn))*lambda_once
 
 
         # Forward cycle loss || G_B(G_A(A)) - A||
@@ -188,17 +189,36 @@ class CycleGAN():
         """
         # Real
         pred_real = D(real,real_attn)
-        loss_D_real = self.criterionGAN(pred_real, torch.ones((pred_real.shape[0],1),device=self.device,requires_grad=False))
+        # loss_D_real = self.criterionGAN(pred_real, torch.ones((pred_real.shape[0],1),device=self.device,requires_grad=False))
         # Fake
         pred_fake = D(fake.detach(),fake_attn)
-        loss_D_fake = self.criterionGAN(pred_fake, torch.zeros((pred_fake.shape[0],1),device=self.device,requires_grad=False))
+        # loss_D_fake = self.criterionGAN(pred_fake, torch.zeros((pred_fake.shape[0],1),device=self.device,requires_grad=False))
         
         # Combined loss and calculate gradients
 
-        # loss_D = torch.mean(pred_fake - pred_real)
-        loss_D = (loss_D_real + loss_D_fake) * 0.5
-    
-        # loss_D = loss_D+gradient_penalty*10
+        loss_D = torch.mean(pred_fake - pred_real)
+        # loss_D = (loss_D_real + loss_D_fake) * 0.5
+        
+
+        alpha = torch.rand((real.shape[0], 1, 1),device=torch.device('cuda:0'))
+        onehot = torch.zeros((real.shape[0],real.shape[1],fake.shape[-1]), device=torch.device('cuda:0'))
+        onehot_real = onehot.scatter_(-1,real.unsqueeze(-1),1).float()
+        if(onehot_real.shape[1]>fake.shape[1]):
+            onehot_real = alpha.expand(onehot_real.size()) *onehot_real
+            fake = (1-alpha.expand(fake.size())) *fake
+            onehot_real[:,:fake.shape[1],:] = onehot_real[:,:fake.shape[1],:]+fake
+            interpolates=onehot_real.clone()
+        else:
+            onehot_real = alpha.expand(onehot_real.size()) *onehot_real
+            fake = (1-alpha.expand(fake.size())) *fake
+            fake[:,:onehot_real.shape[1],:] = fake[:,:onehot_real.shape[1],:]+onehot_real
+            interpolates=fake.clone()
+
+        interpolates = torch.autograd.Variable(interpolates, requires_grad=True)
+        output = D(interpolates,1-(interpolates[:, :,0]>1e-3).long())
+        gradient = torch.autograd.grad(outputs=output, inputs=interpolates,grad_outputs=torch.ones(output.size()).cuda(),create_graph=True, retain_graph=True, only_inputs=True)[0]
+        gradient_penalty = ((gradient.norm(2, dim=1) - 1) ** 2).mean() * self.args.lambda_GP#TODO
+        loss_D = loss_D+gradient_penalty
         loss_D.backward()
         return loss_D
 
