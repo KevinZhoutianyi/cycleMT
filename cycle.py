@@ -40,6 +40,8 @@ class CycleGAN():
         self.GBA_once_meter = AvgrageMeter()
         self.DA_meter = AvgrageMeter()
         self.DB_meter = AvgrageMeter()
+        self.DA_GP_meter = AvgrageMeter()
+        self.DB_GP_meter = AvgrageMeter()
         self.fake_A_pool = Pool(args.poolsize)  
         self.fake_B_pool = Pool(args.poolsize)  
         self.criterionGAN = torch.nn.MSELoss()
@@ -198,9 +200,9 @@ class CycleGAN():
 
         loss_D = torch.mean(pred_fake - pred_real)
         # loss_D = (loss_D_real + loss_D_fake) * 0.5
-        
+        fake_ = fake.clone()
+        alpha = torch.clip(torch.rand((real.shape[0], 1, 1),device=torch.device('cuda:0')),min=1e-2)
 
-        alpha = torch.rand((real.shape[0], 1, 1),device=torch.device('cuda:0'))
         onehot = torch.zeros((real.shape[0],real.shape[1],fake.shape[-1]), device=torch.device('cuda:0'))
         onehot_real = onehot.scatter_(-1,real.unsqueeze(-1),1).float()
         if(onehot_real.shape[1]>fake.shape[1]):
@@ -215,28 +217,42 @@ class CycleGAN():
             interpolates=fake.clone()
 
         interpolates = torch.autograd.Variable(interpolates, requires_grad=True)
-        output = D(interpolates,1-(interpolates[:, :,0]>1e-3).long())
+        output = D(interpolates,1-(interpolates[:, :,0]>1e-4).long())
         gradient = torch.autograd.grad(outputs=output, inputs=interpolates,grad_outputs=torch.ones(output.size()).cuda(),create_graph=True, retain_graph=True, only_inputs=True)[0]
         
         gradient_penalty = ((gradient.norm(2, dim=1) - 1) ** 2).mean() * self.args.lambda_GP#TODO
         
+        
+        if(gradient_penalty.item()>10):
+            torch.save(real,'./checkpoint/real.pt')
+            torch.save(fake_,'./checkpoint/fake_.pt')
+            torch.save(alpha,'./checkpoint/alpha.pt')
+            torch.save(onehot_real,'./checkpoint/onehot_real.pt')
+            torch.save(fake,'./checkpoint/fake.pt')
+            torch.save(interpolates,'./checkpoint/interpolates.pt')
+            torch.save(output,'./checkpoint/output.pt')
+            torch.save(gradient,'./checkpoint/gradient.pt')
+            torch.save(gradient_penalty,'./checkpoint/gradient_penalty.pt')
+        
         ret = loss_D+gradient_penalty
         ret.backward()
-        return ret
+        return loss_D.item(),gradient_penalty.item()
 
     def backward_D_A(self):
         """Calculate GAN loss for discriminator D_A"""
         fake_B = self.fake_B_pool.query(self.fake_B)
         fake_B =self.fake_B
-        self.loss_D_A = self.backward_D_basic(self.D_A, self.real_B, self.real_B_attn, fake_B,1-(fake_B[:, :,0]>0.5).long())
-        self.DA_meter.update(self.loss_D_A.item(),self.bs)
+        loss_D,loss_GP = self.backward_D_basic(self.D_A, self.real_B, self.real_B_attn, fake_B,1-(fake_B[:, :,0]>0.5).long())
+        self.DA_meter.update(loss_D,self.bs)
+        self.DA_GP_meter.update(loss_GP,self.bs)
 
     def backward_D_B(self):
         """Calculate GAN loss for discriminator D_B"""
         fake_A = self.fake_A_pool.query(self.fake_A)
         fake_A = self.fake_A
-        self.loss_D_B = self.backward_D_basic(self.D_B, self.real_A,self.real_A_attn,  fake_A,1-(fake_A[:, :,0]>0.5).long())
-        self.DB_meter.update(self.loss_D_B.item(),self.bs)
+        loss_D,loss_GP  = self.backward_D_basic(self.D_B, self.real_A,self.real_A_attn,  fake_A,1-(fake_A[:, :,0]>0.5).long())
+        self.DB_meter.update(loss_D,self.bs)
+        self.DB_GP_meter.update(loss_GP,self.bs)
 
         
     def set_requires_grad(self, nets, requires_grad=False):
@@ -258,6 +274,10 @@ class CycleGAN():
             self.GBA_once_meter.reset() 
         ret['DA_meter'] = self.DA_meter.avg 
         ret['DB_meter'] = self.DB_meter.avg 
+        ret['DA_GP_meter'] = self.DA_GP_meter.avg 
+        ret['DB_GP_meter'] = self.DB_GP_meter.avg 
         self.DA_meter.reset()
         self.DB_meter.reset() 
+        self.DA_GP_meter.reset()
+        self.DB_GP_meter.reset() 
         return ret

@@ -1,6 +1,7 @@
 import torch
 from utils import *
 from cycle import *
+import os
 from basic_model import *
 import torch.backends.cudnn as cudnn
 from torch.autograd import Variable
@@ -45,4 +46,9 @@ def my_train(loader,model,total_iter,args,logging,valid_loader,tokenizer,wandb):
             torch.save(model.D_B,'./checkpoint/D_B.pt')
             torch.save(model.G_AB,'./checkpoint/G_AB.pt')
             torch.save(model.G_BA,'./checkpoint/G_BA.pt')
+            
+            torch.save(model.D_A,os.path.join(wandb.run.dir, "D_A.pt"))
+            torch.save(model.D_B,os.path.join(wandb.run.dir, "D_B.pt"))
+            torch.save(model.G_AB,os.path.join(wandb.run.dir, "G_AB.pt"))
+            torch.save(model.G_BA,os.path.join(wandb.run.dir, "G_BA.pt"))
             my_test(valid_loader,model,tokenizer,logging,wandb)
