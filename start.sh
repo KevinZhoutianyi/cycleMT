@@ -11,7 +11,7 @@ mkdir checkpoint
 rm -f ./log/*.txt
 rm -f ./tensorboard/* 
 python main.py  --num_workers 4             --batch_size 32             --max_length 256    \
-                --train_num_points 300000   --valid_num_points 3000     --poolsize 1                    \
+                --train_num_points 60000   --valid_num_points 2195     --poolsize 1                    \
                 --D_lr 5e-5                 --G_lr 5e-6                 --D_gamma 1       --G_gamma 1      \
                 --rep_iter 1000             --D_pretrain_iter 3000         --test_iter 10000    \
                 --lambda_once 5             --lambda_B 50                --lambda_A 50         --lambda_GP 1    \
