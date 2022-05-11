@@ -211,8 +211,8 @@ class CycleGAN():
             onehot_real[:,:fake.shape[1],:] = onehot_real[:,:fake.shape[1],:]+fake
             interpolates=onehot_real.clone()
         else:
-            onehot_real = alpha.expand(onehot_real.size()) *onehot_real
-            fake = (1-alpha.expand(fake.size())) *fake
+            fake = alpha.expand(fake.size()) *fake
+            onehot_real = (1-alpha.expand(onehot_real.size())) *onehot_real
             fake[:,:onehot_real.shape[1],:] = fake[:,:onehot_real.shape[1],:]+onehot_real
             interpolates=fake.clone()
 
@@ -220,7 +220,7 @@ class CycleGAN():
         output = D(interpolates,1-(interpolates[:, :,0]>1e-4).long())
         gradient = torch.autograd.grad(outputs=output, inputs=interpolates,grad_outputs=torch.ones(output.size()).cuda(),create_graph=True, retain_graph=True, only_inputs=True)[0]
         
-        gradient_penalty = ((gradient.norm(2, dim=1) - 1) ** 2).mean() * self.args.lambda_GP#TODO
+        gradient_penalty = ((gradient.mean(-1).norm(2,1) - 1) ** 2).mean() * self.args.lambda_GP#TODO
         
         
         if(gradient_penalty.item()>10):
