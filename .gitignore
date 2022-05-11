@@ -14,7 +14,7 @@ wandb/
 
 # C extensions
 *.so
-
+report/
 # Distribution / packaging
 .Python
 build/
