@@ -16,4 +16,4 @@ python main.py  --num_workers 4             --batch_size 32             --max_le
                 --rep_iter 1000             --D_pretrain_iter 3000         --test_iter 10000    \
                 --lambda_once 10             --lambda_B 50                --lambda_A 50         --lambda_GP 1    \
                 --load_D 0                  --load_G 0                  --valid_begin 1             --train_D 1         \
-                --exp_name domaintransferbible,nocycle
+                --exp_name aggresiveD
