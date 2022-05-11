@@ -222,7 +222,7 @@ class CycleGAN():
         
         gradient_penalty = ((gradient.mean(-1).norm(2,1) - 1) ** 2).mean() * self.args.lambda_GP#TODO
         
-        
+        print(gradient_penalty)
         if(gradient_penalty.item()>10):
             torch.save(real,'./checkpoint/real.pt')
             torch.save(fake_,'./checkpoint/fake_.pt')
