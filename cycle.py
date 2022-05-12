@@ -196,12 +196,10 @@ class CycleGAN():
         pred_fake = D(fake.detach(),fake_attn)
         # loss_D_fake = self.criterionGAN(pred_fake, torch.zeros((pred_fake.shape[0],1),device=self.device,requires_grad=False))
         
-        # Combined loss and calculate gradients
-
         loss_D = torch.mean(pred_fake - pred_real)
         # loss_D = (loss_D_real + loss_D_fake) * 0.5
         fake_ = fake.clone()
-        alpha = torch.clip(torch.rand((real.shape[0], 1, 1),device=torch.device('cuda:0')),min=1e-2)
+        alpha = torch.clip(torch.rand((real.shape[0], 1, 1),device=torch.device('cuda:0')),min=1e-1,max=9e-1)
 
         onehot = torch.zeros((real.shape[0],real.shape[1],fake.shape[-1]), device=torch.device('cuda:0'))
         onehot_real = onehot.scatter_(-1,real.unsqueeze(-1),1).float()
@@ -222,7 +220,7 @@ class CycleGAN():
         
         gradient_penalty = ((gradient.mean(-1).norm(2,1) - 1) ** 2).mean() * self.args.lambda_GP#TODO
         
-        print(gradient_penalty)
+        # print(gradient_penalty)
         if(gradient_penalty.item()>10):
             torch.save(real,'./checkpoint/real.pt')
             torch.save(fake_,'./checkpoint/fake_.pt')
@@ -237,7 +235,7 @@ class CycleGAN():
         ret = loss_D+gradient_penalty
         ret.backward()
         return loss_D.item(),gradient_penalty.item()
-
+##TODO: add lose D(de) - D(en)
     def backward_D_A(self):
         """Calculate GAN loss for discriminator D_A"""
         fake_B = self.fake_B_pool.query(self.fake_B)
