@@ -99,10 +99,10 @@ class G(nn.Module):
         att = (generate_id>0.5).long()
         x_emb = self.embedding(x_)
         distr = self.model(inputs_embeds=x_emb, attention_mask=x_attn, labels = generate_id, decoder_attention_mask =att).logits
-        one_hot_output,att = distr,1-(distr[:, :,0]>0.5).long()
-        # distr_softmax = self.softmax(distr)
-        # one_hot = torch.zeros(generate_id.shape[0], generate_id.shape[1],distr_softmax.shape[-1], device=torch.device('cuda:0'),requires_grad=False)
-        # one_hot_output = one_hot.scatter_(-1, generate_id.unsqueeze(-1), 1.).float().detach() + distr_softmax - distr_softmax.detach()
+        # one_hot_output,att = distr,1-(distr[:, :,0]>0.5).long()
+        distr_softmax = self.softmax(distr)
+        one_hot = torch.zeros(generate_id.shape[0], generate_id.shape[1],distr_softmax.shape[-1], device=torch.device('cuda:0'),requires_grad=False)
+        one_hot_output = one_hot.scatter_(-1, generate_id.unsqueeze(-1), 1.).float().detach() + distr_softmax - distr_softmax.detach()
         return one_hot_output,att# not start with padding
 
 
