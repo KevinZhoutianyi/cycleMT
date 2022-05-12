@@ -99,10 +99,10 @@ class G(nn.Module):
         att = (generate_id>0.5).long()
         x_emb = self.embedding(x_)
         distr = self.model(inputs_embeds=x_emb, attention_mask=x_attn, labels = generate_id, decoder_attention_mask =att).logits
-        # one_hot_output = F.gumbel_softmax(distr, tau=1, hard=True,dim=-1)
-        distr_softmax = self.softmax(distr)
-        one_hot = torch.zeros(generate_id.shape[0], generate_id.shape[1],distr_softmax.shape[-1], device=torch.device('cuda:0'),requires_grad=False)
-        one_hot_output = one_hot.scatter_(-1, generate_id.unsqueeze(-1), 1.).float().detach() + distr_softmax - distr_softmax.detach()
+        one_hot_output,att = distr,1-(distr[:, :,0]>0.5).long()
+        # distr_softmax = self.softmax(distr)
+        # one_hot = torch.zeros(generate_id.shape[0], generate_id.shape[1],distr_softmax.shape[-1], device=torch.device('cuda:0'),requires_grad=False)
+        # one_hot_output = one_hot.scatter_(-1, generate_id.unsqueeze(-1), 1.).float().detach() + distr_softmax - distr_softmax.detach()
         return one_hot_output,att# not start with padding
 
 
@@ -131,6 +131,7 @@ class G(nn.Module):
         output_ids = self.model.generate( input_ids = x, num_beams = num_beams, early_stopping = True, max_length = max_length, length_penalty =0.8, repetition_penalty = 1)
         return output_ids
     def forward(self, input_ids, input_attn, target_ids = None, target_attn = None):
+        input_ids, input_attn = self.add_prefix(input_ids,input_attn)
         inp_emb = self.embedding(input_ids)
         out = self.model(inputs_embeds = inp_emb, attention_mask = input_attn, labels = target_ids, decoder_attention_mask = target_attn, return_dict=True)
         return out
