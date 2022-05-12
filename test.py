@@ -10,6 +10,10 @@ def my_test(loader,model,tokenizer,logging,wandb):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     GAB_acc = 0
     GBA_acc = 0
+    DA_test_loss_acc = 0
+    DB_test_loss_acc = 0
+    DA_test_accuracy_acc = 0
+    DB_test_accuracy_acc = 0
     counter = 0
     GAB_metric_sacrebleu =  load_metric('sacrebleu')
     GBA_metric_sacrebleu =  load_metric('sacrebleu')
@@ -22,6 +26,8 @@ def my_test(loader,model,tokenizer,logging,wandb):
     DA.eval()
     DB.eval()
     for step,batch in enumerate(loader):
+        
+        counter+= 1
         a = Variable(batch[0], requires_grad=False).to(device, non_blocking=False)#en
         a_attn = Variable(batch[1], requires_grad=False).to(device, non_blocking=False)
         b = Variable(batch[2], requires_grad=False).to(device, non_blocking=False)#de    
@@ -35,9 +41,17 @@ def my_test(loader,model,tokenizer,logging,wandb):
         GBA_loss = GBA.forward(b,b_attn,a,a_attn).loss
         GAB_acc+= GAB_loss.item()
         GBA_acc+= GBA_loss.item()
-        counter+= 1
 
+        
+        b_dis  = DA(b,b_attn)
+        a_dis  = DB(a,a_attn)
+        a_pred_dis  = DA(a_generate,(a_generate>0.5).long())
+        b_pred_dis  = DB(b_generate,(b_generate>0.5).long())
 
+        DA_test_loss_acc += (a_pred_dis - b_dis).mean()
+        DB_test_loss_acc += (b_pred_dis - a_dis).mean()
+        DA_test_accuracy_acc +=((a_pred_dis - b_dis)<0).sum()/a_pred_dis.shape[0]
+        DB_test_accuracy_acc +=((b_pred_dis - a_dis)<0).sum()/b_pred_dis.shape[0]
 
         a_label_decoded = tokenizer.batch_decode(a,skip_special_tokens=True)
         b_label_decoded =  tokenizer.batch_decode(b,skip_special_tokens=True)
@@ -54,18 +68,6 @@ def my_test(loader,model,tokenizer,logging,wandb):
         GBA_metric_sacrebleu.add_batch(predictions=b_pred_str, references=a_label_str)
 
         if  step%100==0:
-            # logging.info(f"a{a}")
-            # logging.info(f"a_attn{a_attn}")
-            # logging.info(f"b{b}")
-            # logging.info(f"b_attn{b_attn}")
-            # logging.info(f"a_generate{a_generate}")
-            # logging.info(f"(a_generate>0.5).long()){(a_generate>0.5).long()}")
-            # logging.info(f"b_generate{b_generate}")
-            # logging.info(f"(b_generate>0.5).long(){(b_generate>0.5).long()}")
-            b_dis  = DA(b,b_attn)
-            a_dis  = DB(a,a_attn)
-            a_pred_dis  = DA(a_generate,(a_generate>0.5).long())
-            b_pred_dis  = DB(b_generate,(b_generate>0.5).long())
             logging.info("DB_a_: {}".format(''.join(map(lambda x: str(x.item())[:5]+',  ', a_dis))))
             logging.info("DB_pred_dis: {}".format(''.join(map(lambda x:  str(x.item())[:5]+',  ', b_pred_dis))))
             logging.info("DA_b: {}".format(''.join(map(lambda x:  str(x.item())[:5]+',  ', b_dis))))
@@ -85,7 +87,15 @@ def my_test(loader,model,tokenizer,logging,wandb):
     logging.info('%s GBA sacreBLEU : %f',GBA.name,GBA_sacrebleu_score['score'])#TODO:bleu may be wrong cuz max length
     logging.info('%s GAB test loss : %f',GAB.name,GAB_acc/(counter))
     logging.info('%s GBA test loss : %f',GBA.name,GBA_acc/(counter))
+    logging.info('%s DA test loss : %f',DA.name,DA_test_loss_acc/(counter))
+    logging.info('%s DB test loss : %f',DB.name,DB_test_loss_acc/(counter))
+    logging.info('%s DA test accuracy : %f',DA.name,DA_test_accuracy_acc/(counter))
+    logging.info('%s DB test accuracy : %f',DB.name,DB_test_accuracy_acc/(counter))
     wandb.log({'GAB sacreBLEU':GAB_sacrebleu_score['score']})
     wandb.log({'GBA sacreBLEU':GBA_sacrebleu_score['score']})
     wandb.log({'GAB test loss':GAB_acc/(counter)})
     wandb.log({'GBA test loss':GBA_acc/(counter)})
+    wandb.log({'DA test loss':DA_test_loss_acc/(counter)})
+    wandb.log({'DB test loss':DB_test_loss_acc/(counter)})
+    wandb.log({'DA test accuracy':DA_test_accuracy_acc/(counter)})
+    wandb.log({'DB test accuracy':DB_test_accuracy_acc/(counter)})
