@@ -17,4 +17,4 @@ python main.py  --num_workers 4             --batch_size 36             --max_le
                 --rep_iter 1000             --D_pretrain_iter 500000         --test_iter 10000    \
                 --lambda_once 1             --lambda_B 15                --lambda_A 15         --lambda_GP 1    \
                 --load_D 0                  --load_G 0                  --valid_begin 1             --train_D 1         \
-                --exp_name bible,onlyD,withoutLoss2
+                --exp_name bible,onlyD,withLoss2
