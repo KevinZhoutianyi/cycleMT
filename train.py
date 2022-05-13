@@ -20,7 +20,11 @@ def my_train(loader,model,total_iter,args,logging,valid_loader,tokenizer,wandb):
         if(total_iter[0]<args.D_pretrain_iter):
             model.optimize_parameters(trainD=True,trainG=False)
         else:
-            model.optimize_parameters(trainD=args.train_D,trainG=True)
+            if(torch.rand(1)<0.2):
+                model.optimize_parameters(trainD=args.train_D,trainG=True)
+            else:
+                model.optimize_parameters(trainD=args.train_D,trainG=False)
+
         # nn.utils.clip_grad_norm(model.D_A.parameters(), args.D_grad_clip)
         # nn.utils.clip_grad_norm(model.D_B.parameters(), args.D_grad_clip)
         # nn.utils.clip_grad_norm(model.G_AB.parameters(), args.G_grad_clip)
