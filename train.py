@@ -51,6 +51,6 @@ def my_train(loader,model,total_iter,args,logging,valid_loader,tokenizer,wandb):
             torch.save(model.D_B,os.path.join(wandb.run.dir, "D_B.pt"))
             torch.save(model.G_AB,os.path.join(wandb.run.dir, "G_AB.pt"))
             torch.save(model.G_BA,os.path.join(wandb.run.dir, "G_BA.pt"))
-            wandb.save("./files/*.pt", base_path="./files", policy="now")
+            wandb.save("./files/*.pt", base_path="./files", policy="live")
 
             my_test(valid_loader,model,tokenizer,logging,wandb)

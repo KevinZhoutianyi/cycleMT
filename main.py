@@ -68,9 +68,9 @@ if(True):
     parser.add_argument('--load_G', type=int,                       default=0,      help='load pretrained D')
     parser.add_argument('--num_workers', type=int,                  default=0,      help='num_workers')
     parser.add_argument('--valid_begin', type=int,                  default=1,      help='whether valid before train')
-    parser.add_argument('--train_G', type=int,                      default=1,      help='whether valid before train')
+    parser.add_argument('--train_G', type=int,                      default=0,      help='whether valid before train')
     parser.add_argument('--train_D', type=int,                      default=1,      help='whether valid before train')
-    parser.add_argument('--D_pretrain_iter', type=int,              default=100,      help='whether valid before train')
+    parser.add_argument('--D_pretrain_iter', type=int,              default=20000,      help='whether valid before train')
     parser.add_argument('--poolsize', type=int,                     default=1,      help='whether valid before train')
 
 
@@ -84,7 +84,7 @@ if(True):
 import wandb
 os.environ['WANDB_API_KEY']='a166474b1b7ad33a0549adaaec19a2f6d3f91d87'
 os.environ['WANDB_NAME']=args.exp_name
-wandb.init(project="CYCLEGAN",config=args)
+wandb.init(project="CYCLEGAN2",config=args)
 
 # %%
 #logging file

@@ -202,6 +202,7 @@ class CycleGAN():
         
         loss_D = torch.mean(pred_fake - pred_real)
         # loss_D = (loss_D_real + loss_D_fake) * 0.5
+        '''
         fake_ = fake.clone()
         alpha = torch.clip(torch.rand((real.shape[0], 1, 1),device=torch.device('cuda:0')),min=1e-1,max=9e-1)
 
@@ -219,21 +220,27 @@ class CycleGAN():
             onehot_real = (1-alpha.expand(onehot_real.size())) *onehot_real
             fake[:,:onehot_real.shape[1],:] = fake[:,:onehot_real.shape[1],:]+onehot_real
             interpolates=fake.clone()
-
-        interpolates = torch.autograd.Variable(interpolates, requires_grad=True)
-        output = D(interpolates,1-(interpolates[:, :,0]>1e-4).long())
-        gradient = torch.autograd.grad(outputs=output, inputs=interpolates,grad_outputs=torch.ones(output.size()).cuda(),create_graph=True, retain_graph=True, only_inputs=True)[0]
+        '''
+        onehot = torch.zeros((real.shape[0],real.shape[1],fake.shape[-1]), device=torch.device('cuda:0'))
+        onehot_real = onehot.scatter_(-1,real.unsqueeze(-1),1).float()
+        if(torch.rand(1)>0.5):
+            temp = onehot_real.clone()
+        else:
+            temp = fake.clone()
+        temp = torch.autograd.Variable(temp, requires_grad=True)
+        output = D(temp,1-(temp[:, :,0]>1e-4).long())
+        gradient = torch.autograd.grad(outputs=output, inputs=temp,grad_outputs=torch.ones(output.size()).cuda(),create_graph=True, retain_graph=True, only_inputs=True)[0]
         
         gradient_penalty = ((gradient.mean(-1).norm(2,1) - 1) ** 2).mean() * self.args.lambda_GP#TODO
         
         # print(gradient_penalty)
         if(gradient_penalty.item()>10):
             torch.save(real,'./checkpoint/real.pt')
-            torch.save(fake_,'./checkpoint/fake_.pt')
-            torch.save(alpha,'./checkpoint/alpha.pt')
-            torch.save(onehot_real,'./checkpoint/onehot_real.pt')
+            # torch.save(fake_,'./checkpoint/fake_.pt')
+            # torch.save(alpha,'./checkpoint/alpha.pt')
+            # torch.save(onehot_real,'./checkpoint/onehot_real.pt')
             torch.save(fake,'./checkpoint/fake.pt')
-            torch.save(interpolates,'./checkpoint/interpolates.pt')
+            torch.save(temp,'./checkpoint/interpolates.pt')
             torch.save(output,'./checkpoint/output.pt')
             torch.save(gradient,'./checkpoint/gradient.pt')
             torch.save(gradient_penalty,'./checkpoint/gradient_penalty.pt')
