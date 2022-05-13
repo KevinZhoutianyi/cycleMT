@@ -42,6 +42,10 @@ class CycleGAN():
         self.DB_meter = AvgrageMeter()
         self.DA_GP_meter = AvgrageMeter()
         self.DB_GP_meter = AvgrageMeter()
+        self.DA_meter2 = AvgrageMeter()
+        self.DB_meter2 = AvgrageMeter()
+        self.DA_GP_meter2 = AvgrageMeter()
+        self.DB_GP_meter2 = AvgrageMeter()
         self.fake_A_pool = Pool(args.poolsize)  
         self.fake_B_pool = Pool(args.poolsize)  
         self.criterionGAN = torch.nn.MSELoss()
@@ -203,6 +207,8 @@ class CycleGAN():
 
         onehot = torch.zeros((real.shape[0],real.shape[1],fake.shape[-1]), device=torch.device('cuda:0'))
         onehot_real = onehot.scatter_(-1,real.unsqueeze(-1),1).float()
+        
+
         if(onehot_real.shape[1]>fake.shape[1]):
             onehot_real = alpha.expand(onehot_real.size()) *onehot_real
             fake = (1-alpha.expand(fake.size())) *fake
@@ -241,16 +247,26 @@ class CycleGAN():
         fake_B = self.fake_B_pool.query(self.fake_B)
         fake_B =self.fake_B
         loss_D,loss_GP = self.backward_D_basic(self.D_A, self.real_B, self.real_B_attn, fake_B,1-(fake_B[:, :,0]>0.5).long())
+        onehot = torch.zeros((self.real_A.shape[0],self.real_A.shape[1],fake_B.shape[-1]), device=torch.device('cuda:0'))
+        onehot_real_A = onehot.scatter_(-1,self.real_A.unsqueeze(-1),1).float()
+        loss_D2,loss_GP2 = self.backward_D_basic(self.D_A, self.real_B, self.real_B_attn,onehot_real_A,self.real_A_attn)
         self.DA_meter.update(loss_D,self.bs)
         self.DA_GP_meter.update(loss_GP,self.bs)
+        self.DA_meter2.update(loss_D2,self.bs)
+        self.DA_GP_meter2.update(loss_GP2,self.bs)
 
     def backward_D_B(self):
         """Calculate GAN loss for discriminator D_B"""
         fake_A = self.fake_A_pool.query(self.fake_A)
         fake_A = self.fake_A
         loss_D,loss_GP  = self.backward_D_basic(self.D_B, self.real_A,self.real_A_attn,  fake_A,1-(fake_A[:, :,0]>0.5).long())
+        onehot = torch.zeros((self.real_B.shape[0],self.real_B.shape[1],fake_A.shape[-1]), device=torch.device('cuda:0'))
+        onehot_real_B = onehot.scatter_(-1,self.real_B.unsqueeze(-1),1).float()
+        loss_D2,loss_GP2 = self.backward_D_basic(self.D_B, self.real_A, self.real_A_attn,onehot_real_B,self.real_B_attn)
         self.DB_meter.update(loss_D,self.bs)
         self.DB_GP_meter.update(loss_GP,self.bs)
+        self.DB_meter2.update(loss_D2,self.bs)
+        self.DB_GP_meter2.update(loss_GP2,self.bs)
 
         
     def set_requires_grad(self, nets, requires_grad=False):
@@ -274,8 +290,16 @@ class CycleGAN():
         ret['DB_meter'] = self.DB_meter.avg 
         ret['DA_GP_meter'] = self.DA_GP_meter.avg 
         ret['DB_GP_meter'] = self.DB_GP_meter.avg 
+        ret['DA_meter2'] = self.DA_meter2.avg 
+        ret['DB_meter2'] = self.DB_meter2.avg 
+        ret['DA_GP_meter2'] = self.DA_GP_meter2.avg 
+        ret['DB_GP_meter2'] = self.DB_GP_meter2.avg 
         self.DA_meter.reset()
         self.DB_meter.reset() 
         self.DA_GP_meter.reset()
         self.DB_GP_meter.reset() 
+        self.DA_meter2.reset()
+        self.DB_meter2.reset() 
+        self.DA_GP_meter2.reset()
+        self.DB_GP_meter2.reset() 
         return ret

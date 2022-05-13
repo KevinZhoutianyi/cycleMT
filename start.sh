@@ -13,8 +13,8 @@ rm -f ./log/*.txt
 rm -f ./tensorboard/* 
 python main.py  --num_workers 4             --batch_size 36             --max_length 256    \
                 --train_num_points 60000   --valid_num_points 2195     --poolsize 1                    \
-                --D_lr 5e-5                 --G_lr 1e-6                 --D_gamma 1       --G_gamma 1      \
+                --D_lr 5e-5                 --G_lr 5e-6                 --D_gamma 1       --G_gamma 1      \
                 --rep_iter 1000             --D_pretrain_iter 500000         --test_iter 10000    \
                 --lambda_once 1             --lambda_B 15                --lambda_A 15         --lambda_GP 1    \
                 --load_D 0                  --load_G 0                  --valid_begin 1             --train_D 1         \
-                --exp_name ...bibleonlyD
+                --exp_name ...withDloss2
