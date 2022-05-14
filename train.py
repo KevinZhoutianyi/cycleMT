@@ -20,7 +20,7 @@ def my_train(loader,model,total_iter,args,logging,valid_loader,tokenizer,wandb):
         if(total_iter[0]<args.D_pretrain_iter):
             model.optimize_parameters(trainD=True,trainG=False)
         else:
-            if(torch.rand(1)<0.2):
+            if(torch.rand(1)<args.chance):
                 model.optimize_parameters(trainD=args.train_D,trainG=True)
             else:
                 model.optimize_parameters(trainD=args.train_D,trainG=False)

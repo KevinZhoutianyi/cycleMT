@@ -16,5 +16,5 @@ python main.py  --num_workers 4             --batch_size 32             --max_le
                 --D_lr 5e-5                 --G_lr 5e-6                 --D_gamma 1       --G_gamma 1      \
                 --rep_iter 1000             --D_pretrain_iter 5000         --test_iter 10000    \
                 --lambda_once 1             --lambda_B 10                --lambda_A 10         --lambda_GP 1    \
-                --load_D 0                  --load_G 0                  --valid_begin 1             --train_D 1         \
-                --exp_name bible,0.2chancetotrainG
+                --load_D 0                  --load_G 0                  --valid_begin 1             --train_D 1       --chance 0.3  \
+                --exp_name bible,0.4chancetotrainG
