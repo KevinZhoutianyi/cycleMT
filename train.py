@@ -20,13 +20,9 @@ def my_train(loader,model,total_iter,args,logging,valid_loader,tokenizer,wandb):
         if(total_iter[0]<args.D_pretrain_iter):
             model.optimize_parameters(trainD=True,trainG=False)
         else:
-            p = torch.rand(1)
-            print(p)
-            if(p<0.2):
-                print("!")
+            if(torch.rand(1)):
                 model.optimize_parameters(trainD=args.train_D,trainG=True)
             else:
-                print("?")
                 model.optimize_parameters(trainD=args.train_D,trainG=False)
 
         # nn.utils.clip_grad_norm(model.D_A.parameters(), args.D_grad_clip)
