@@ -20,10 +20,10 @@ def my_train(loader,model,total_iter,args,logging,valid_loader,tokenizer,wandb):
         if(total_iter[0]<args.D_pretrain_iter):
             model.optimize_parameters(trainD=True,trainG=False)
         else:
-            if(step%args.DperG==0 and step!=0):
-                model.optimize_parameters(trainD=args.train_D,trainG=True)
+            if(step%args.GperD==0 and step!=0):
+                model.optimize_parameters(trainD=True,trainG=True)
             else:
-                model.optimize_parameters(trainD=args.train_D,trainG=False)
+                model.optimize_parameters(trainD=False,trainG=True)
 
 
         if(total_iter[0]%args.rep_iter == 0):

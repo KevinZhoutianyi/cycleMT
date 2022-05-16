@@ -61,8 +61,9 @@ if(True):
     parser.add_argument('--lambda_A', type=float,                   default=0,   help='')
     parser.add_argument('--lambda_B', type=float,                   default=0,   help='')
     parser.add_argument('--lambda_once', type=float,                default=1,   help='')
-    parser.add_argument('--lambda_GP', type=float,                  default=100,   help='WGANGP pentalty')
+    parser.add_argument('--lambda_GP', type=float,                  default=10,   help='WGANGP pentalty')
     parser.add_argument('--DperG', type=int,                        default=2,    help='n_critc')
+    parser.add_argument('--GperD', type=int,                        default=2,    help='n_g')
     parser.add_argument('--smoothing', type=float,                  default=0.5,    help='labelsmoothing')
 
     parser.add_argument('--load_D', type=int,                       default=0,      help='load pretrained D')
