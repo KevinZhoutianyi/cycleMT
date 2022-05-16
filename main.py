@@ -86,7 +86,7 @@ if(True):
 import wandb
 os.environ['WANDB_API_KEY']='a166474b1b7ad33a0549adaaec19a2f6d3f91d87'
 os.environ['WANDB_NAME']=args.exp_name
-wandb.init(project="CYCLEGAN2",config=args)
+wandb.init(project="cycleWMT",config=args)
 
 # %%
 #logging file
@@ -116,9 +116,9 @@ tokenizer = AutoTokenizer.from_pretrained(GABmodelname)
 
 
 # %%
-dataset = load_dataset("bible_para", lang1="de", lang2="en")#load_dataset('wmt16',language+'-en')
+dataset = load_dataset('wmt16',language+'-en')#load_dataset("bible_para", lang1="de", lang2="en")
 train = dataset['train']['translation'][:args.train_num_points]
-valid = dataset['train']['translation'][-args.valid_num_points:]#TODO:
+valid = dataset['validation']['translation'][-args.valid_num_points:]#TODO:
 
 
 train_data = get_Dataset_chaos(train, tokenizer,max_length=args.max_length)
