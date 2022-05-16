@@ -1,4 +1,5 @@
 from cProfile import label
+from dis import dis
 from lib2to3.pgen2.tokenize import generate_tokens
 from math import dist
 import os
@@ -39,10 +40,15 @@ class Embedding_(torch.nn.Module):
         assert mask.dtype == torch.float
         return torch.matmul(mask[:,:,:32100], self.embedding.weight[:32100,:])
 class D(nn.Module):
-    def __init__(self,args,pretrained,name='D') -> None:
+    def __init__(self,args,pretrained,name='D',tokenizer=None,prefix='') -> None:
         super(D, self).__init__()
         self.name = name
         self.args = args
+        self.tokenizer = tokenizer
+        self.tokenzied_prefix = tokenize([prefix],tokenizer,args.max_length,True)[0].squeeze().cuda()
+        self.tokenzied_prefix.require_grad = False
+        self.tokenzied_prefix_attn = tokenize([prefix],tokenizer,args.max_length,True)[1].squeeze().cuda()
+        self.tokenzied_prefix_attn.require_grad = False
         self.encoder = pretrained.get_encoder()
         self.embedding = Embedding_(self.encoder.embed_tokens).requires_grad_()
         # self.dropout = nn.Dropout(0.1)
@@ -55,23 +61,36 @@ class D(nn.Module):
         self.embedding.requires_grad_ = require
         self.classifier.requires_grad_ = require
     def forward(self,x,x_attn):
+        x,x_attn =  self.add_prefix(x,x_attn)
         x_emb = self.embedding(x)
         distr = self.encoder(inputs_embeds=x_emb,attention_mask=x_attn).last_hidden_state
         x_attn= x_attn.unsqueeze(-1)
         distr = torch.mul(distr,x_attn)#previously,even the word is 0, their will be some value in the context vector, the model will make them large to classifier.
-        distr = torch.sum(distr,1)/torch.sum(x_attn,1)
+        distr = distr[:,0,:]#torch.sum(distr,1)/torch.sum(x_attn,1)
         ret =  self.classifier(distr)#(bs,1)
         # ret = self.relu(ret)#(bs,1)no for WGAN
         return ret
+    def add_prefix(self,x,x_attn):
+        prefix = self.tokenzied_prefix.repeat(x.shape[0],1)#.cuda()
+        if(len(x.shape)==2):
+            x = torch.hstack((prefix,x))
+        else:
+            one_hot = torch.zeros(x.shape[0], prefix.shape[1],x.shape[-1], device=torch.device('cuda:0'),requires_grad=False)
+            prefix = one_hot.scatter_(-1, prefix.unsqueeze(-1), 1.).float()
+            
+            x = torch.hstack((prefix,x))
+        prefix = self.tokenzied_prefix_attn.repeat(x.shape[0],1)#.cuda()
+        x_attn = torch.hstack((prefix,x_attn))
+        return x,x_attn
 
 class G(nn.Module):
     def __init__(self,args,pretrained,tokenizer,prefix,name='G') -> None:
         super(G, self).__init__()
         self.name = name
         self.tokenizer = tokenizer
-        self.tokenzied_prefix = tokenize([prefix],tokenizer,512,True)[0].squeeze().cuda()
+        self.tokenzied_prefix = tokenize([prefix],tokenizer,args.max_length,True)[0].squeeze().cuda()
         self.tokenzied_prefix.require_grad = False
-        self.tokenzied_prefix_attn = tokenize([prefix],tokenizer,512,True)[1].squeeze().cuda()
+        self.tokenzied_prefix_attn = tokenize([prefix],tokenizer,args.max_length,True)[1].squeeze().cuda()
         self.tokenzied_prefix_attn.require_grad = False
         self.args = args
         self.model = pretrained

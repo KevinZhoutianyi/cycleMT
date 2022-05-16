@@ -29,8 +29,8 @@ class CycleGAN():
             self.D_B = None
             self.D_B = torch.load('./model/D_B.pt').to(self.device)
         else:
-            self.D_A = D(args=args,pretrained=DA,name="D_A").to(self.device)
-            self.D_B = D(args=args,pretrained=DB,name="D_B").to(self.device)
+            self.D_A = D(args=args,pretrained=DA,name="D_A",tokenizer=tokenizer,prefix='classification: ').to(self.device)
+            self.D_B = D(args=args,pretrained=DB,name="D_B",tokenizer=tokenizer,prefix='classification: ').to(self.device)
         self.tokenizer = tokenizer
         self.args = args
         self.bs = args.batch_size
@@ -55,10 +55,14 @@ class CycleGAN():
         # self.optimizer_G_BA = Adafactor(self.G_BA.parameters(), lr = args.G_lr ,scale_parameter=False, relative_step=False , warmup_init=False,clip_threshold=1,beta1=0,eps=( 1e-30,0.001))
         # self.optimizer_D_A = Adafactor(self.D_A.parameters(), lr = args.D_lr ,scale_parameter=False, relative_step=False , warmup_init=False,clip_threshold=1,beta1=0,eps=( 1e-30,0.001))
         # self.optimizer_D_B = Adafactor(self.D_B.parameters(), lr = args.D_lr ,scale_parameter=False, relative_step=False , warmup_init=False,clip_threshold=1,beta1=0,eps=( 1e-30,0.001))
-        self.optimizer_G_AB = torch.optim.RMSprop(self.G_AB.parameters(),  lr= args.G_lr , weight_decay=args.G_weight_decay)
-        self.optimizer_G_BA = torch.optim.RMSprop(self.G_BA.parameters(),  lr= args.G_lr , weight_decay=args.G_weight_decay)
-        self.optimizer_D_A = torch.optim.RMSprop(self.D_A.parameters(),  lr= args.D_lr , weight_decay=args.D_weight_decay)
-        self.optimizer_D_B = torch.optim.RMSprop(self.D_B.parameters(),  lr= args.D_lr, weight_decay=args.D_weight_decay)
+        # self.optimizer_G_AB = torch.optim.RMSprop(self.G_AB.parameters(),  lr= args.G_lr , weight_decay=args.G_weight_decay)
+        # self.optimizer_G_BA = torch.optim.RMSprop(self.G_BA.parameters(),  lr= args.G_lr , weight_decay=args.G_weight_decay)
+        # self.optimizer_D_A = torch.optim.RMSprop(self.D_A.parameters(),  lr= args.D_lr , weight_decay=args.D_weight_decay)
+        # self.optimizer_D_B = torch.optim.RMSprop(self.D_B.parameters(),  lr= args.D_lr, weight_decay=args.D_weight_decay)
+        self.optimizer_G_AB = torch.optim.Adam(self.G_AB.parameters(),  lr= args.G_lr ,  betas=(0, 0.9)  )
+        self.optimizer_G_BA = torch.optim.Adam(self.G_BA.parameters(),  lr= args.G_lr ,  betas=(0, 0.9)  )
+        self.optimizer_D_A = torch.optim.Adam(self.D_A.parameters(),  lr= args.D_lr,  betas=(0, 0.9)  )
+        self.optimizer_D_B = torch.optim.Adam(self.D_B.parameters(),  lr= args.D_lr,  betas=(0, 0.9)  )
         self.scheduler_G_AB =torch.optim.lr_scheduler.StepLR(self.optimizer_G_AB, 1, gamma=args.G_gamma)
         self.scheduler_G_BA = torch.optim.lr_scheduler.StepLR(self.optimizer_G_BA, 1, gamma=args.G_gamma)
         self.scheduler_D_A =torch.optim.lr_scheduler.StepLR(self.optimizer_D_A, 1, gamma=args.D_gamma)
@@ -223,17 +227,21 @@ class CycleGAN():
         '''
         onehot = torch.zeros((real.shape[0],real.shape[1],fake.shape[-1]), device=torch.device('cuda:0'))
         onehot_real = onehot.scatter_(-1,real.unsqueeze(-1),1).float()
-        if(torch.rand(1)>0.5):
-            temp = onehot_real.clone()
-        else:
-            temp = fake.clone()
+
+        
+        temp = onehot_real.clone()
         temp = torch.autograd.Variable(temp, requires_grad=True)
         output = D(temp,1-(temp[:, :,0]>1e-4).long())
         gradient = torch.autograd.grad(outputs=output, inputs=temp,grad_outputs=torch.ones(output.size()).cuda(),create_graph=True, retain_graph=True, only_inputs=True)[0]
+        gradient_penalty1 = ((gradient.mean(-1).norm(2,1)) ** 2).mean() * self.args.lambda_GP#TODO
+
+        temp = fake.clone()
+        temp = torch.autograd.Variable(temp, requires_grad=True)
+        output = D(temp,1-(temp[:, :,0]>1e-4).long())
+        gradient = torch.autograd.grad(outputs=output, inputs=temp,grad_outputs=torch.ones(output.size()).cuda(),create_graph=True, retain_graph=True, only_inputs=True)[0]
+        gradient_penalty2 = ((gradient.mean(-1).norm(2,1)) ** 2).mean() * self.args.lambda_GP#TODO
         
-        gradient_penalty = ((gradient.mean(-1).norm(2,1) - 1) ** 2).mean() * self.args.lambda_GP#TODO
-        
-        # print(gradient_penalty)
+        gradient_penalty = (gradient_penalty1+gradient_penalty2) /2
         if(gradient_penalty.item()>10):
             torch.save(real,'./checkpoint/real.pt')
             # torch.save(fake_,'./checkpoint/fake_.pt')
