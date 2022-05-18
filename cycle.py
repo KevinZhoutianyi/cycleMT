@@ -179,7 +179,8 @@ class CycleGAN():
 
 
         # combined loss and calculate gradients
-        self.loss_G =  self.loss_G_A + self.loss_G_B + 200#self.loss_cycle_A + self.loss_cycle_B# + self.loss_idt_A + self.loss_idt_B#
+        temp = torch.ones(1,requires_grad=False,device=self.device)*200
+        self.loss_G =  self.loss_G_A + self.loss_G_B + temp#self.loss_cycle_A + self.loss_cycle_B# + self.loss_idt_A + self.loss_idt_B#
         self.GA_cycle_meter.update(self.loss_cycle_A.item(),self.bs)
         self.GB_cycle_meter.update(self.loss_cycle_B.item(),self.bs)
         self.GAB_once_meter.update(self.loss_G_A.item(),self.bs)
