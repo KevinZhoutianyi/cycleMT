@@ -70,9 +70,9 @@ class CycleGAN():
     
     def forward(self):#TODO: prefix + gumblesoftmax
         self.fake_B,self.fake_B_attn = self.G_AB.gumbel_generate(self.real_A,self.real_A_attn)  # G_A(A)
-        self.rec_A,self.rec_A_attn = self.G_BA.gumbel_generate_soft(self.fake_B,self.fake_B_attn)   # G_B(G_A(A))
+        self.rec_A,self.rec_A_attn = self.G_BA.gumbel_generate(self.fake_B,self.fake_B_attn)   # G_B(G_A(A))
         self.fake_A,self.fake_A_attn = self.G_BA.gumbel_generate(self.real_B,self.real_B_attn)  # G_B(B)
-        self.rec_B,self.rec_B_attn = self.G_AB.gumbel_generate_soft(self.fake_A,self.fake_A_attn)   # G_A(G_B(B))
+        self.rec_B,self.rec_B_attn = self.G_AB.gumbel_generate(self.fake_A,self.fake_A_attn)   # G_A(G_B(B))
     def set_input(self,A,A_attn,B,B_attn):
         self.real_A,self.real_A_attn = A,A_attn
         self.real_B,self.real_B_attn = B,B_attn
