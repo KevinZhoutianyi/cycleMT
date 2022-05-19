@@ -12,7 +12,7 @@ rm -f ./checkpoint/*
 rm -f ./log/*.txt
 rm -f ./tensorboard/* 
 python main.py --num_workers 4 --batch_size 32 --max_length 256 --train_num_points 800000 \
-                --valid_num_points 3500 --poolsize 1 --D_lr 1e-5 --G_lr 5e-6 --D_gamma 1 --G_gamma 1 --rep_iter 1000 \
+                --valid_num_points 3500 --poolsize 1 --D_lr 5e-6 --G_lr 5e-6 --D_gamma 1 --G_gamma 1 --rep_iter 1000 \
                 --D_pretrain_iter 5000 --test_iter 10000 --lambda_once 1 --lambda_B 20 --lambda_A 20 --lambda_GP 50 \
                 --load_D 0 --load_G 0 --valid_begin 1 --train_D 1 --DperG 15\
-                --exp_name 1once.20cycle,800kdata,1e-5lr
+                --exp_name 1once.20cycle,800kdata,logitcycle
