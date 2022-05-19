@@ -124,7 +124,24 @@ class G(nn.Module):
         one_hot_output = one_hot.scatter_(-1, generate_id.unsqueeze(-1), 1.).float().detach() + distr_softmax - distr_softmax.detach()
         return one_hot_output,att# not start with padding
 
-
+    def gumbel_generate_soft(self,x,x_attn):
+        '''
+        input is (batchsize,sentencelength) without prefix and start padding
+        1. add prefix
+        2. gumble trick
+        3. return the generated one_hot output(batchsize,sentencelength,vocabsize)
+        '''
+        x,x_attn = self.add_prefix(x,x_attn)#add translate a to b:
+        x_ = x#made copy
+        if(len(x.shape)==3):
+            x = torch.argmax(x,-1)#change logit to index if needed
+        generate_id = self.generate(x,num_beams=2)[:,1:].contiguous()#get rid of start padding 
+        att = (generate_id>0.5).long()
+        x_emb = self.embedding(x_)
+        distr = self.model(inputs_embeds=x_emb, attention_mask=x_attn, labels = generate_id, decoder_attention_mask =att).logits
+        # one_hot_output,att = distr,1-(distr[:, :,0]>0.5).long()
+        distr_softmax = self.softmax(distr)
+        return distr_softmax,att# not start with padding
 
 
     def add_prefix(self,x,x_attn):
