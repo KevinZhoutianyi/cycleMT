@@ -180,7 +180,7 @@ class CycleGAN():
 
         # combined loss and calculate gradients
         # temp = torch.ones(1,requires_grad=False,device=self.device)*200
-        self.loss_G =  self.loss_G_A + self.loss_G_B + self.loss_cycle_A + self.loss_cycle_B# + self.loss_idt_A + self.loss_idt_B#
+        self.loss_G =  self.loss_G_A + self.loss_G_B + self.loss_cycle_A  + self.loss_cycle_B# + self.loss_idt_A + self.loss_idt_B#
         self.GA_cycle_meter.update(self.loss_cycle_A.item(),self.bs)
         self.GB_cycle_meter.update(self.loss_cycle_B.item(),self.bs)
         self.GAB_once_meter.update(self.loss_G_A.item(),self.bs)
@@ -243,12 +243,12 @@ class CycleGAN():
         gradient_penalty2 = ((gradient.mean(-1).norm(2,1)) ** 2).mean() * self.args.lambda_GP#TODO
         
         gradient_penalty = (gradient_penalty1+gradient_penalty2) /2
-        if(gradient_penalty.item()>10):
+        if(gradient_penalty.item()>100):
             torch.save(real,'./checkpoint/real.pt')
             # torch.save(fake_,'./checkpoint/fake_.pt')
             # torch.save(alpha,'./checkpoint/alpha.pt')
-            # torch.save(onehot_real,'./checkpoint/onehot_real.pt')
-            torch.save(fake,'./checkpoint/fake.pt')
+            torch.save(onehot_real,'./checkpoint/onehot_real.pt')
+            # torch.save(fake,'./checkpoint/fake.pt')
             torch.save(temp,'./checkpoint/interpolates.pt')
             torch.save(output,'./checkpoint/output.pt')
             torch.save(gradient,'./checkpoint/gradient.pt')

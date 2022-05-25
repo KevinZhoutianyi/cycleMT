@@ -158,13 +158,13 @@ class G(nn.Module):
         return x,x_attn
     def generate(self, input_ids, num_beams = 2, max_length=512):#long training time!
         max_length = self.args.max_length
-        output_ids = self.model.generate( input_ids = input_ids, num_beams = num_beams, early_stopping = True, max_length = max_length, length_penalty =0.8, repetition_penalty = 1 )
+        output_ids = self.model.generate( input_ids = input_ids, num_beams = num_beams, early_stopping = True, max_length = max_length, length_penalty =0.6, repetition_penalty = 1 )
         return output_ids
     def test_generate(self, x, num_beams = 2, max_length=512):
         max_length = self.args.max_length
         prefix = self.tokenzied_prefix.repeat(x.shape[0],1)#.cuda()
         x = torch.hstack((prefix,x))
-        output_ids = self.model.generate( input_ids = x, num_beams = num_beams, early_stopping = True, max_length = max_length, length_penalty =0.8, repetition_penalty = 1)
+        output_ids = self.model.generate( input_ids = x, num_beams = num_beams, early_stopping = True, max_length = max_length, length_penalty =0.6, repetition_penalty = 1)
         return output_ids
     def forward(self, input_ids, input_attn, target_ids = None, target_attn = None):
         input_ids, input_attn = self.add_prefix(input_ids,input_attn)
