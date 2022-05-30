@@ -93,6 +93,7 @@ class G(nn.Module):
         self.tokenzied_prefix_attn = tokenize([prefix],tokenizer,args.max_length,True)[1].squeeze().cuda()
         self.tokenzied_prefix_attn.require_grad = False
         self.args = args
+        self.num_beam = args.num_beam
         self.model = pretrained
         self.softmax = torch.nn.Softmax(dim=-1)
         self.encoder = self.model.get_encoder()
@@ -104,19 +105,22 @@ class G(nn.Module):
 
 
     def gumbel_generate(self,x,x_attn):
-        '''
+        ''' A -> B
         input is (batchsize,sentencelength) without prefix and start padding
         1. add prefix
         2. gumble trick
-        3. return the generated one_hot output(batchsize,sentencelength,vocabsize)
+        3. return the generated one_hot output(batchsize*numbeam,sentencelength,vocabsize)
         '''
+        #assume BS =32
+        num_beam = self.num_beam
         x,x_attn = self.add_prefix(x,x_attn)#add translate a to b:
-        x_ = x#made copy
+        x_ = x#made copy (BS,seqlen)
         if(len(x.shape)==3):
             x = torch.argmax(x,-1)#change logit to index if needed
-        generate_id = self.generate(x,num_beams=2)[:,1:].contiguous()#get rid of start padding 
+        generate_id = self.generate(x,num_beams=num_beam,num_return_sequences=num_beam)[:,1:].contiguous()#get rid of start padding  shapewill be (32*4,seqlen)
         att = (generate_id>0.5).long()
-        x_emb = self.embedding(x_)
+        x_ = tile(x_,0,num_beam)#(BS*num_beam,seqlen)
+        x_emb = self.embedding(x_)#(BS,seqlen,512)
         distr = self.model(inputs_embeds=x_emb, attention_mask=x_attn, labels = generate_id, decoder_attention_mask =att).logits
         # one_hot_output,att = distr,1-(distr[:, :,0]>0.5).long()
         distr_softmax = self.softmax(distr)
@@ -125,11 +129,11 @@ class G(nn.Module):
         return one_hot_output,att# not start with padding
 
     def gumbel_generate_soft(self,x,x_attn):
-        '''
-        input is (batchsize,sentencelength) without prefix and start padding
+        ''' B -> cycleA
+        input is (batchsize*numbeam,sentencelength) without prefix and start padding
         1. add prefix
         2. gumble trick
-        3. return the generated one_hot output(batchsize,sentencelength,vocabsize)
+        3. return the generated one_hot output(batchsize*numbeam,sentencelength,vocabsize)
         '''
         x,x_attn = self.add_prefix(x,x_attn)#add translate a to b:
         x_ = x#made copy

@@ -34,6 +34,7 @@ class CycleGAN():
         self.tokenizer = tokenizer
         self.args = args
         self.bs = args.batch_size
+        self.num_beam = args.num_beam
         self.GB_cycle_meter = AvgrageMeter()
         self.GA_cycle_meter = AvgrageMeter()
         self.GAB_once_meter = AvgrageMeter()
@@ -69,8 +70,8 @@ class CycleGAN():
         self.scheduler_D_B = torch.optim.lr_scheduler.StepLR(self.optimizer_D_B, 1, gamma=args.D_gamma)
     
     def forward(self):#TODO: prefix + gumblesoftmax
-        self.fake_B,self.fake_B_attn = self.G_AB.gumbel_generate(self.real_A,self.real_A_attn)  # G_A(A)
-        self.rec_A,self.rec_A_attn = self.G_BA.gumbel_generate_soft(self.fake_B,self.fake_B_attn)   # G_B(G_A(A))
+        self.fake_B,self.fake_B_attn = self.G_AB.gumbel_generate(self.real_A,self.real_A_attn)  # G_A(A) (batchsize*numbeam,sentencelength,vocabsize)
+        self.rec_A,self.rec_A_attn = self.G_BA.gumbel_generate_soft(self.fake_B,self.fake_B_attn)   # G_B(G_A(A)) (batchsize*numbeam,sentencelength,vocabsize)
         self.fake_A,self.fake_A_attn = self.G_BA.gumbel_generate(self.real_B,self.real_B_attn)  # G_B(B)
         self.rec_B,self.rec_B_attn = self.G_AB.gumbel_generate_soft(self.fake_A,self.fake_A_attn)   # G_A(G_B(B))
     def set_input(self,A,A_attn,B,B_attn):
@@ -148,32 +149,33 @@ class CycleGAN():
         # self.loss_G_B = self.criterionGAN(self.D_B(self.fake_A,self.fake_A_attn), torch.ones((self.fake_A.shape[0],1),device=self.device))*lambda_once
         self.loss_G_B = torch.mean(-self.D_B(self.fake_A,self.fake_A_attn))*lambda_once
 
-
+        tile_A = tile(self.real_A,0,self.num_beam)
         # Forward cycle loss || G_B(G_A(A)) - A||
-        if(self.real_A.shape[1]>self.rec_A.shape[1]):#realsize>rec -> add tail to the rec
-            self.tail = torch.zeros(self.real_A.shape[1]-self.rec_A.shape[1],device=self.device,requires_grad=False).long()
-            self.tail = self.tail.repeat(self.real_A.shape[0],1)
+        if(tile_A.shape[1]>self.rec_A.shape[1]):#realsize>rec -> add tail to the rec
+            self.tail = torch.zeros(tile_A.shape[1]-self.rec_A.shape[1],device=self.device,requires_grad=False).long()
+            self.tail = self.tail.repeat(tile_A.shape[0],1)
             self.one_hot = torch.zeros((self.tail.shape[0], self.tail.shape[1],self.rec_A.shape[-1]),device=self.device,requires_grad=False)
             self.tail = self.one_hot.scatter_(-1, self.tail.unsqueeze(-1), 1.).float()
             self.temp = torch.hstack((self.rec_A,self.tail))
-            self.loss_cycle_A = self.criterionCycle(self.temp.reshape(-1,self.temp.shape[-1]), self.real_A.reshape(-1)).mean() * lambda_A
+            self.loss_cycle_A = self.criterionCycle(self.temp.reshape(-1,self.temp.shape[-1]), tile_A.reshape(-1)).mean() * lambda_A
         else:#realsize<rec -> add tail to the real
-            self.tail = torch.zeros(self.real_A.shape[0],self.rec_A.shape[1]-self.real_A.shape[1],device=self.device,requires_grad=False).long()
-            self.temp  = torch.hstack((self.real_A,self.tail))
+            self.tail = torch.zeros(tile_A.shape[0],self.rec_A.shape[1]-tile_A.shape[1],device=self.device,requires_grad=False).long()
+            self.temp  = torch.hstack((tile_A,self.tail))
             self.loss_cycle_A = self.criterionCycle(self.rec_A.reshape(-1,self.rec_A.shape[-1]), self.temp.reshape(-1)).mean() *lambda_A
 
 
+        tile_B = tile(self.real_B,0,self.num_beam)
         # Backward cycle loss || G_A(G_B(B)) - B||
-        if(self.real_B.shape[1]>self.rec_B.shape[1]):
-            self.tail = torch.zeros(self.real_B.shape[1]-self.rec_B.shape[1],device=self.device,requires_grad=False).long()
-            self.tail =self.tail.repeat(self.real_B.shape[0],1)
+        if(tile_B.shape[1]>self.rec_B.shape[1]):
+            self.tail = torch.zeros(tile_B.shape[1]-self.rec_B.shape[1],device=self.device,requires_grad=False).long()
+            self.tail =self.tail.repeat(tile_B.shape[0],1)
             self.one_hot = torch.zeros((self.tail.shape[0], self.tail.shape[1],self.rec_B.shape[-1]),device=self.device,requires_grad=False)
             self.tail = self.one_hot.scatter_(-1, self.tail.unsqueeze(-1), 1.).float()
             self.temp = torch.hstack((self.rec_B,self.tail))
-            self.loss_cycle_B = self.criterionCycle(self.temp.reshape(-1,self.temp.shape[-1]), self.real_B.reshape(-1)).mean() *lambda_B
+            self.loss_cycle_B = self.criterionCycle(self.temp.reshape(-1,self.temp.shape[-1]), tile_B.reshape(-1)).mean() *lambda_B
         else:
-            self.tail = torch.zeros(self.real_B.shape[0],self.rec_B.shape[1]-self.real_B.shape[1],device=self.device,requires_grad=False).long()
-            self.temp  = torch.hstack((self.real_B,self.tail))
+            self.tail = torch.zeros(tile_B.shape[0],self.rec_B.shape[1]-tile_B.shape[1],device=self.device,requires_grad=False).long()
+            self.temp  = torch.hstack((tile_B,self.tail))
             self.loss_cycle_B = self.criterionCycle(self.rec_B.reshape(-1,self.rec_B.shape[-1]), self.temp.reshape(-1)).mean() *lambda_B
             
 
@@ -203,8 +205,10 @@ class CycleGAN():
         # loss_D_real = self.criterionGAN(pred_real, torch.ones((pred_real.shape[0],1),device=self.device,requires_grad=False))
         # Fake
         pred_fake = D(fake.detach(),fake_attn)
+        print(pred_fake)
         # loss_D_fake = self.criterionGAN(pred_fake, torch.zeros((pred_fake.shape[0],1),device=self.device,requires_grad=False))
-        
+        pred_fake = torch.mean(pred_fake.reshape(pred_real.shape[0],self.num_beam,-1),1)
+        print(pred_fake)
         loss_D = torch.mean(pred_fake - pred_real)
         # loss_D = (loss_D_real + loss_D_fake) * 0.5
         '''
@@ -257,7 +261,6 @@ class CycleGAN():
         ret = loss_D+gradient_penalty
         ret.backward()
         return loss_D.item(),gradient_penalty.item()
-##TODO: add lose D(de) - D(en)
     def backward_D_A(self):
         """Calculate GAN loss for discriminator D_A"""
         fake_B = self.fake_B_pool.query(self.fake_B)

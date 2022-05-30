@@ -21,7 +21,6 @@ from basic_model import *
 import time
 import argparse
 from tqdm import tqdm
-from torch.utils.tensorboard import SummaryWriter
 import string
 from cycle import *
 from train import *
@@ -33,10 +32,11 @@ if(True):
     parser = argparse.ArgumentParser("main")
 
     parser.add_argument('--valid_num_points', type=int,             default = 300, help='validation data number')
-    parser.add_argument('--train_num_points', type=int,             default = 5000, help='train data number')
+    parser.add_argument('--train_num_points', type=int,             default = 1000, help='train data number')
 
     parser.add_argument('--batch_size', type=int,                   default=4,     help='Batch size')
     parser.add_argument('--max_length', type=int,                   default=128,     help='max_length')
+    parser.add_argument('--num_beam', type=int,                     default=2,     help='num_beam')
 
     parser.add_argument('--gpu', type=int,                          default=0,      help='gpu device id')
     parser.add_argument('--G_AB_model_name', type=str,              default='t5-small',      help='model_name')
@@ -58,9 +58,9 @@ if(True):
     parser.add_argument('--D_gamma', type=float,                    default=1,    help='lr*gamma after each test')
     parser.add_argument('--D_grad_clip', type=float,                default=1e-2,   help='grad_clip')
     parser.add_argument('--lambda_identity', type=float,            default=0.5,   help='')
-    parser.add_argument('--lambda_A', type=float,                   default=0,   help='')
-    parser.add_argument('--lambda_B', type=float,                   default=0,   help='')
-    parser.add_argument('--lambda_once', type=float,                default=1,   help='')
+    parser.add_argument('--lambda_A', type=float,                   default=1,   help='')
+    parser.add_argument('--lambda_B', type=float,                   default=1,   help='')
+    parser.add_argument('--lambda_once', type=float,                default=0,   help='')
     parser.add_argument('--lambda_GP', type=float,                  default=10,   help='WGANGP pentalty')
     parser.add_argument('--DperG', type=int,                        default=2,    help='n_critc')
     parser.add_argument('--GperD', type=int,                        default=2,    help='n_g')
@@ -69,14 +69,14 @@ if(True):
     parser.add_argument('--load_D', type=int,                       default=0,      help='load pretrained D')
     parser.add_argument('--load_G', type=int,                       default=0,      help='load pretrained D')
     parser.add_argument('--num_workers', type=int,                  default=0,      help='num_workers')
-    parser.add_argument('--valid_begin', type=int,                  default=0,      help='whether valid before train')
+    parser.add_argument('--valid_begin', type=int,                  default=1,      help='whether valid before train')
     parser.add_argument('--train_G', type=int,                      default=1,      help='whether valid before train')
     parser.add_argument('--train_D', type=int,                      default=1,      help='whether valid before train')
-    parser.add_argument('--D_pretrain_iter', type=int,              default=5000,      help='whether valid before train')
+    parser.add_argument('--D_pretrain_iter', type=int,              default=0,      help='whether valid before train')
     parser.add_argument('--poolsize', type=int,                     default=1,      help='whether valid before train')
 
 
-    args = parser.parse_args()#(args=['--batch_size', '8',  '--no_cuda'])#used in ipynb
+    args = parser.parse_args(args=[])#(args=['--batch_size', '8',  '--no_cuda'])#used in ipynb
     args.test_iter = args.test_iter//args.batch_size * args.batch_size
     args.rep_iter = args.rep_iter//args.batch_size * args.batch_size
     print('args.test_iter',args.test_iter)
@@ -132,17 +132,14 @@ valid_dataloader = DataLoader(valid_data, sampler=SequentialSampler(valid_data),
 cycleGAN = CycleGAN(args,GABpretrained,GBApretrained,DApretrained,DBpretrained,tokenizer)
 
 # %%
-if(args.valid_begin==1):
-    my_test(valid_dataloader,cycleGAN,tokenizer,logging,wandb)
+# if(args.valid_begin==1):
+#     my_test(valid_dataloader,cycleGAN,tokenizer,logging,wandb)
 total_iter = [0]  
 for epoch in range(args.epochs):
 
     logging.info(f"\n\n  ----------------epoch:{epoch}----------------")
     my_train(train_dataloader,cycleGAN,total_iter,args,logging,valid_dataloader,tokenizer,wandb)
 
-
-
-# %%
 
 
 
