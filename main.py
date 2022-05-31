@@ -31,8 +31,8 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 if(True):
     parser = argparse.ArgumentParser("main")
 
-    parser.add_argument('--valid_num_points', type=int,             default = 300, help='validation data number')
-    parser.add_argument('--train_num_points', type=int,             default = 1000, help='train data number')
+    parser.add_argument('--valid_num_points', type=int,             default = 100, help='validation data number')
+    parser.add_argument('--train_num_points', type=int,             default = 500, help='train data number')
 
     parser.add_argument('--batch_size', type=int,                   default=4,     help='Batch size')
     parser.add_argument('--max_length', type=int,                   default=128,     help='max_length')
