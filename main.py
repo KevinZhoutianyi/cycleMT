@@ -36,7 +36,7 @@ if(True):
 
     parser.add_argument('--batch_size', type=int,                   default=4,     help='Batch size')
     parser.add_argument('--max_length', type=int,                   default=128,     help='max_length')
-    parser.add_argument('--num_beam', type=int,                     default=4,     help='num_beam')
+    parser.add_argument('--num_beam', type=int,                     default=2,     help='num_beam')
 
     parser.add_argument('--gpu', type=int,                          default=0,      help='gpu device id')
     parser.add_argument('--G_AB_model_name', type=str,              default='t5-small',      help='model_name')
