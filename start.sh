@@ -16,3 +16,4 @@ python main.py --num_workers 4 --batch_size 32 --max_length 256 --train_num_poin
                 --lambda_once 1 --lambda_B 500 --lambda_A 500 --lambda_GP 50 \
                 --load_D 0 --load_G 0 --valid_begin 1 --train_D 1 --DperG 15 \
                 --exp_name 1once.500cycle,800kdata
+

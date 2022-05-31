@@ -118,8 +118,9 @@ class G(nn.Module):
         if(len(x.shape)==3):
             x = torch.argmax(x,-1)#change logit to index if needed
         generate_id = self.generate(x,num_beams=num_beam,num_return_sequences=num_beam)[:,1:].contiguous()#get rid of start padding  shapewill be (32*4,seqlen)
-        att = (generate_id>0.5).long()
+        att = (generate_id>0.5).long()# (32*4,seqlen)
         x_ = tile(x_,0,num_beam)#(BS*num_beam,seqlen)
+        x_attn = tile(x_attn,0,num_beam)#(BS*num_beam,seqlen)
         x_emb = self.embedding(x_)#(BS,seqlen,512)
         distr = self.model(inputs_embeds=x_emb, attention_mask=x_attn, labels = generate_id, decoder_attention_mask =att).logits
         # one_hot_output,att = distr,1-(distr[:, :,0]>0.5).long()
@@ -139,7 +140,7 @@ class G(nn.Module):
         x_ = x#made copy
         if(len(x.shape)==3):
             x = torch.argmax(x,-1)#change logit to index if needed
-        generate_id = self.generate(x,num_beams=2)[:,1:].contiguous()#get rid of start padding 
+        generate_id = self.generate(x,num_beams=2,num_return_sequences=1)[:,1:].contiguous()#get rid of start padding 
         att = (generate_id>0.5).long()
         x_emb = self.embedding(x_)
         distr = self.model(inputs_embeds=x_emb, attention_mask=x_attn, labels = generate_id, decoder_attention_mask =att).logits

@@ -205,10 +205,8 @@ class CycleGAN():
         # loss_D_real = self.criterionGAN(pred_real, torch.ones((pred_real.shape[0],1),device=self.device,requires_grad=False))
         # Fake
         pred_fake = D(fake.detach(),fake_attn)
-        print(pred_fake)
         # loss_D_fake = self.criterionGAN(pred_fake, torch.zeros((pred_fake.shape[0],1),device=self.device,requires_grad=False))
         pred_fake = torch.mean(pred_fake.reshape(pred_real.shape[0],self.num_beam,-1),1)
-        print(pred_fake)
         loss_D = torch.mean(pred_fake - pred_real)
         # loss_D = (loss_D_real + loss_D_fake) * 0.5
         '''

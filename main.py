@@ -76,7 +76,7 @@ if(True):
     parser.add_argument('--poolsize', type=int,                     default=1,      help='whether valid before train')
 
 
-    args = parser.parse_args(args=[])#(args=['--batch_size', '8',  '--no_cuda'])#used in ipynb
+    args = parser.parse_args()#(args=['--batch_size', '8',  '--no_cuda'])#used in ipynb
     args.test_iter = args.test_iter//args.batch_size * args.batch_size
     args.rep_iter = args.rep_iter//args.batch_size * args.batch_size
     print('args.test_iter',args.test_iter)
@@ -140,6 +140,9 @@ for epoch in range(args.epochs):
     logging.info(f"\n\n  ----------------epoch:{epoch}----------------")
     my_train(train_dataloader,cycleGAN,total_iter,args,logging,valid_dataloader,tokenizer,wandb)
 
+
+
+# %%
 
 
 
