@@ -36,7 +36,7 @@ if(True):
 
     parser.add_argument('--batch_size', type=int,                   default=4,     help='Batch size')
     parser.add_argument('--max_length', type=int,                   default=128,     help='max_length')
-    parser.add_argument('--num_beam', type=int,                     default=2,     help='num_beam')
+    parser.add_argument('--num_beam', type=int,                     default=4,     help='num_beam')
 
     parser.add_argument('--gpu', type=int,                          default=0,      help='gpu device id')
     parser.add_argument('--G_AB_model_name', type=str,              default='t5-small',      help='model_name')
@@ -132,8 +132,8 @@ valid_dataloader = DataLoader(valid_data, sampler=SequentialSampler(valid_data),
 cycleGAN = CycleGAN(args,GABpretrained,GBApretrained,DApretrained,DBpretrained,tokenizer)
 
 # %%
-# if(args.valid_begin==1):
-#     my_test(valid_dataloader,cycleGAN,tokenizer,logging,wandb)
+if(args.valid_begin==1):
+    my_test(valid_dataloader,cycleGAN,tokenizer,logging,wandb)
 total_iter = [0]  
 for epoch in range(args.epochs):
 
