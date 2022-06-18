@@ -18,14 +18,30 @@ import gc
 # %%
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-max_length= 512
-test_step = 10000
-report_step = 1000
-seed = 2
-bs = 64 
-lr = 1e-4
-train_num = 500000
-valid_num = 2000
+local_test = 0
+if(local_test==0):
+    max_length= 512
+    test_step = 500000
+    report_step = 10000
+    seed = 2
+    bs = 512 
+    lr = 1e-4
+    train_num = 1000000
+    valid_num = 2000
+else:
+    max_length= 512
+    test_step = 1000
+    report_step = 100
+    seed = 2
+    bs = 32
+    lr = 1e-4
+    train_num = 200
+    valid_num = 100
+
+
+test_step = test_step//bs * bs
+report_step = report_step//bs * bs
+
 now = time.strftime("%Y-%m-%d-%H_%M_%S",time.localtime(time.time())) 
 log_format = '%(asctime)s |\t  %(message)s'
 logging.basicConfig(stream=sys.stdout, level=logging.INFO,
@@ -34,6 +50,8 @@ fh = logging.FileHandler(os.path.join("./log/", now+'.txt'),'w',encoding = "UTF-
 fh.setFormatter(logging.Formatter(log_format))
 logging.getLogger().addHandler(fh)
 
+logging.info(f"test step: {test_step}")
+logging.info(f"rep step: {report_step}")
 
 # Setting the seeds
 np.random.seed(seed)
@@ -42,14 +60,6 @@ cudnn.benchmark = True
 torch.manual_seed(seed)
 cudnn.enabled=True
 torch.cuda.manual_seed(seed)
-
-# %%
-# tokenizer = T5Tokenizer.from_pretrained("t5-small")
-# model = T5ForConditionalGeneration.from_pretrained("t5-small")
-
-# input_ids = tokenizer("translate English to German: The house is wonderful.", return_tensors="pt").input_ids
-# labels = tokenizer("Das Haus ist wunderbar.", return_tensors="pt").input_ids
-# loss = model(input_ids=input_ids, labels=labels).loss
 
 # %%
 class AvgrageMeter(object):
@@ -90,16 +100,17 @@ def get_Dataset(dataset, tokenizer):
     return train_data
 
 # %%
-model = T5ForConditionalGeneration.from_pretrained("t5-small").to(device)
-tokenizer = T5Tokenizer.from_pretrained("t5-small")
+model = T5ForConditionalGeneration.from_pretrained("google/t5-small-lm-adapt").to(device)
+tokenizer = T5Tokenizer.from_pretrained("google/t5-small-lm-adapt")
 optimizer = Adafactor(model.parameters(), lr = lr ,scale_parameter=False, relative_step=False , warmup_init=False,clip_threshold=1,beta1=0,eps=( 1e-30,0.001))
 
 # %%
 
-dataset = load_dataset('wmt16','de-en')
-# dataset = dataset.shuffle(seed=2)
-train = dataset['train']['translation'][:train_num]
-valid = dataset['train']['translation'][train_num:(train_num+valid_num)]
+dataset = load_dataset('wmt14','de-en')
+train = dataset['train'].shuffle(seed=seed).select(range(train_num))
+valid = dataset['validation'].shuffle(seed=seed).select(range(valid_num))
+train = train['translation']
+valid = valid['translation']
 
 def preprocess(dat):
     for t in dat:
@@ -115,9 +126,11 @@ valid_dataloader = DataLoader(valid_data, sampler=SequentialSampler(valid_data),
                         batch_size=bs, pin_memory=True, num_workers=4)
 
 # %%
-def my_train(_dataloader,model,optimizer):
+def my_train(_dataloader,model,optimizer,iter):
     objs = AvgrageMeter()
+    
     for step,batch in enumerate(_dataloader):
+        iter[0] += batch[0].shape[0]
         optimizer.zero_grad()
         train_x = Variable(batch[0], requires_grad=False).to(device, non_blocking=False)
         train_x_attn = Variable(batch[1], requires_grad=False).to(device, non_blocking=False)
@@ -128,8 +141,8 @@ def my_train(_dataloader,model,optimizer):
         loss.backward()
         optimizer.step()
         objs.update(loss.item(), bs)
-        if(step%report_step==0 and step!=0):
-            logging.info(f'step:{step}\t,avgloss:{objs.avg}')
+        if(iter[0]%report_step==0 and iter[0]!=0):
+            logging.info(f'iter:{iter[0]}\t,avgloss:{objs.avg}')
             objs.reset()
 
 # %%
@@ -141,8 +154,7 @@ def my_test(_dataloader,model,epoch):
     counter = 0
     model.eval()
     metric_sacrebleu =  load_metric('sacrebleu')
-    metric_bleu =  load_metric('bleu')
-
+    
     # for step, batch in enumerate(tqdm(_dataloader,desc ="test for epoch"+str(epoch))):
     for step, batch in enumerate(_dataloader):
         
@@ -155,17 +167,14 @@ def my_test(_dataloader,model,epoch):
         ls = model(input_ids=test_dataloaderx, attention_mask=test_dataloaderx_attn, labels=target_ids).loss
         acc+= ls.item()
         counter+= 1
-        pre = model.generate(test_dataloaderx)
+        pre = model.generate(test_dataloaderx ,num_beams = 4, early_stopping = True, max_length = max_length, length_penalty =0.6, repetition_penalty = 0.8)
         x_decoded = tokenizer.batch_decode(test_dataloaderx,skip_special_tokens=True)
         pred_decoded = tokenizer.batch_decode(pre,skip_special_tokens=True)
         label_decoded =  tokenizer.batch_decode(test_dataloadery,skip_special_tokens=True)
         
         pred_str = [x  for x in pred_decoded]
         label_str = [[x] for x in label_decoded]
-        pred_list = [x.split()  for x in pred_decoded]
-        label_list = [[x.split()] for x in label_decoded]
         metric_sacrebleu.add_batch(predictions=pred_str, references=label_str)
-        metric_bleu.add_batch(predictions=pred_list, references=label_list)
         if  step%100==0:
             logging.info(f'x_decoded[:2]:{x_decoded[:2]}')
             logging.info(f'pred_decoded[:2]:{pred_decoded[:2]}')
@@ -173,14 +182,10 @@ def my_test(_dataloader,model,epoch):
             
             
     sacrebleu_score = metric_sacrebleu.compute()
-    bleu_score = metric_bleu.compute()
     logging.info('sacreBLEU : %f',sacrebleu_score['score'])#TODO:bleu may be wrong cuz max length
-    logging.info('BLEU : %f',bleu_score['bleu'])
     logging.info('test loss : %f',acc/(counter))
     
-    del test_dataloaderx,acc,counter,test_dataloaderx_attn,sacrebleu_score,bleu_score,test_dataloadery,test_dataloadery_attn,ls,pre,x_decoded,pred_decoded,label_decoded,pred_str,label_str,pred_list,label_list
-    gc.collect()
-    torch.cuda.empty_cache()
+    
     model.train()
     
     
@@ -191,9 +196,9 @@ def my_test(_dataloader,model,epoch):
 
 my_test(valid_dataloader,model,-1)
 for epoch in range(10):
-
+    iter = [0]
     logging.info(f"\n\n  ----------------epoch:{epoch}----------------")
-    my_train(train_dataloader,model,optimizer )
+    my_train(train_dataloader,model,optimizer,iter)
     my_test(valid_dataloader,model,epoch) 
     torch.save(model,'./model/'+now+'model.pt')
 
