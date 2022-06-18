@@ -20,7 +20,7 @@ import gc
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 local_test = 0
 if(local_test==0):
-    max_length= 256
+    max_length= 128
     test_step = 500000
     report_step = 10000
     seed = 2
