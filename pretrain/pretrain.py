@@ -20,11 +20,11 @@ import gc
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 local_test = 0
 if(local_test==0):
-    max_length= 128
+    max_length= 512
     test_step = 500000
     report_step = 10000
     seed = 2
-    bs = 256 
+    bs = 512 
     lr = 1e-4
     train_num = 1000000
     valid_num = 2000
@@ -135,9 +135,8 @@ def my_train(_dataloader,model,optimizer,iter):
         train_x = Variable(batch[0], requires_grad=False).to(device, non_blocking=False)
         train_x_attn = Variable(batch[1], requires_grad=False).to(device, non_blocking=False)
         train_y = Variable(batch[2], requires_grad=False).to(device, non_blocking=False)    
-        train_y_attn = Variable(batch[3], requires_grad=False).to(device, non_blocking=False)    
-        train_y[train_y == tokenizer.pad_token_id] = -100
-        loss = model(input_ids=train_x, attention_mask=train_x_attn, labels=train_y).loss
+        train_y_attn = Variable(batch[3], requires_grad=False).to(device, non_blocking=False)   
+        loss = model(input_ids=train_x, attention_mask=train_x_attn, labels=train_y,decoder_attention_mask= train_y_attn).loss
         loss.backward()
         optimizer.step()
         objs.update(loss.item(), bs)
@@ -162,9 +161,7 @@ def my_test(_dataloader,model,epoch):
         test_dataloaderx_attn = Variable(batch[1], requires_grad=False).to(device, non_blocking=False)
         test_dataloadery = Variable(batch[2], requires_grad=False).to(device, non_blocking=False)
         test_dataloadery_attn = Variable(batch[3], requires_grad=False).to(device, non_blocking=False)
-        target_ids = copy.deepcopy(test_dataloadery)
-        target_ids[target_ids == tokenizer.pad_token_id] = -100
-        ls = model(input_ids=test_dataloaderx, attention_mask=test_dataloaderx_attn, labels=target_ids).loss
+        ls = model(input_ids=test_dataloaderx, attention_mask=test_dataloaderx_attn, labels=test_dataloadery, decoder_attention_mask= test_dataloadery_attn).loss
         acc+= ls.item()
         counter+= 1
         pre = model.generate(test_dataloaderx ,num_beams = 4, early_stopping = True, max_length = max_length, length_penalty =0.6, repetition_penalty = 0.8)
