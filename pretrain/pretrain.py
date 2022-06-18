@@ -20,11 +20,11 @@ import gc
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 local_test = 0
 if(local_test==0):
-    max_length= 512
+    max_length= 256
     test_step = 500000
     report_step = 10000
     seed = 2
-    bs = 512 
+    bs = 256 
     lr = 1e-4
     train_num = 1000000
     valid_num = 2000
