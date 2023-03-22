@@ -34,9 +34,9 @@ if(True):
     parser.add_argument('--valid_num_points', type=int,             default = 100, help='validation data number')
     parser.add_argument('--train_num_points', type=int,             default = 500, help='train data number')
 
-    parser.add_argument('--batch_size', type=int,                   default=4,     help='Batch size')
+    parser.add_argument('--batch_size', type=int,                   default=8,     help='Batch size')
     parser.add_argument('--max_length', type=int,                   default=128,     help='max_length')
-    parser.add_argument('--num_beam', type=int,                     default=2,     help='num_beam')
+    parser.add_argument('--num_beam', type=int,                     default=1,     help='num_beam')
 
     parser.add_argument('--gpu', type=int,                          default=0,      help='gpu device id')
     parser.add_argument('--G_AB_model_name', type=str,              default='t5-small',      help='model_name')
@@ -86,7 +86,7 @@ if(True):
 import wandb
 os.environ['WANDB_API_KEY']='a166474b1b7ad33a0549adaaec19a2f6d3f91d87'
 os.environ['WANDB_NAME']=args.exp_name
-wandb.init(project="cycleWMT",config=args)
+wandb.init(project="dsc291",config=args)
 
 # %%
 #logging file
