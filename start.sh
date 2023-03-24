@@ -1,4 +1,4 @@
-cd /base_vol/TIANYIZHOU
+cd /base_vol/TIANYIZHOU/cycleMT
 
 pip install torch_optimizer
 pip install transformers==4.18.0
